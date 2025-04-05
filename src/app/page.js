@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { FaStar, FaStarHalfAlt, FaRegStar } from "react-icons/fa";
+import { saveBookReview } from "../../firebase";
+import Auth from "./Auth";
 
 const criteriaList = ["Story", "Language", "Characters", "Pacing", "Originality"];
 
@@ -54,7 +56,7 @@ export default function BookClubApp() {
   const [reviewText, setReviewText] = useState("");
   const [books, setBooks] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false); // New state to track if a search has been performed
+  const [hasSearched, setHasSearched] = useState(false);
 
   useEffect(() => {
     const savedBooks = JSON.parse(localStorage.getItem("books")) || [];
@@ -69,7 +71,7 @@ export default function BookClubApp() {
     const fetchBookData = async () => {
       if (!bookTitle.trim()) return;
       setIsLoading(true);
-      setHasSearched(true); // Mark that a search has been initiated
+      setHasSearched(true);
       const query = encodeURIComponent(bookTitle);
       try {
         const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=intitle:${query}`);
@@ -107,12 +109,12 @@ export default function BookClubApp() {
     setRatings({ ...ratings, [criterion]: value });
   };
 
-  const handleAddBook = () => {
+  const handleAddBook = async () => {
     if (!bookInfo) {
       alert("Please select a book before adding.");
       return;
     }
-    if (!reviewText.trim() && simpleRating === null && Object.keys(ratings).length === 0) {
+    if (simpleRating === null && Object.keys(ratings).length === 0) {
       alert("Please provide at least one rating or a review.");
       return;
     }
@@ -125,24 +127,33 @@ export default function BookClubApp() {
       overall = values.length ? values.reduce((a, b) => a + b, 0) / values.length : 0;
     }
 
-    setBooks([...books, {
+    const review = {
       ...bookInfo,
       ratings,
       simpleRating,
       review: reviewText,
       overall: parseFloat(overall.toFixed(2)),
-    }]);
-    setBookTitle("");
-    setRatings({});
-    setSimpleRating(null);
-    setReviewText("");
-    setBookInfo(null);
-    setBookResults([]);
-    setHasSearched(false); // Reset search state after adding a book
+      createdAt: new Date().toISOString(),
+    };
+
+    try {
+      await saveBookReview(review);
+      setBooks([...books, review]);
+      setBookTitle("");
+      setRatings({});
+      setSimpleRating(null);
+      setReviewText("");
+      setBookInfo(null);
+      setBookResults([]);
+      setHasSearched(false);
+    } catch (error) {
+      alert("Failed to save the review. Please try again.");
+    }
   };
 
   return (
     <div className="p-4 max-w-xl mx-auto">
+      <Auth /> {/* Add this line to render the Auth component */}
       <Card className="mb-4">
         <CardContent className="space-y-4">
           <Input
