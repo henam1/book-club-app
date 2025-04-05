@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, addDoc } from "firebase/firestore";
+import { getFirestore, collection, addDoc, query, where, getDocs } from "firebase/firestore";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
 
 const firebaseConfig = {
@@ -31,6 +31,31 @@ export async function saveBookReview(review) {
   } catch (e) {
     console.error("Error adding document: ", e);
     throw e;
+  }
+}
+
+// Function to fetch reviews for the logged-in user
+export async function fetchUserReviews() {
+  try {
+    const user = auth.currentUser; // Get the currently logged-in user
+    if (!user) throw new Error("User not logged in");
+
+    const q = query(
+      collection(db, "bookReviews"),
+      where("userId", "==", user.uid) // Filter reviews by the logged-in user's ID
+    );
+
+    const querySnapshot = await getDocs(q);
+    const userReviews = querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    console.log("Fetched user reviews:", userReviews);
+    return userReviews;
+  } catch (error) {
+    console.error("Error fetching user reviews:", error);
+    throw error;
   }
 }
 

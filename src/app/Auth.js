@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { registerUser, loginUser, logoutUser } from "../../firebase";
 
-export default function Auth() {
+export default function Auth({ onLogout }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -32,6 +32,7 @@ export default function Auth() {
       await logoutUser();
       alert("Logout successful!");
       setIsLoggedIn(false);
+      onLogout(); // Notify the parent component
     } catch (error) {
       alert("Error logging out: " + error.message);
     }

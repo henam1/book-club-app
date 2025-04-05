@@ -6,8 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { FaStar, FaStarHalfAlt, FaRegStar } from "react-icons/fa";
-import { saveBookReview } from "../../firebase";
+import { saveBookReview, fetchUserReviews } from "../../firebase";
 import Auth from "./Auth";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { auth, db } from "../../firebase";
 
 const criteriaList = ["Story", "Language", "Characters", "Pacing", "Originality"];
 
@@ -57,15 +59,12 @@ export default function BookClubApp() {
   const [books, setBooks] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [userReviews, setUserReviews] = useState([]);
 
-  useEffect(() => {
-    const savedBooks = JSON.parse(localStorage.getItem("books")) || [];
-    setBooks(savedBooks);
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem("books", JSON.stringify(books));
-  }, [books]);
+  const handleLogout = () => {
+    setUserReviews([]); // Clear user reviews on logout
+    setBooks([]); // Clear books state on logout
+  };
 
   useEffect(() => {
     const fetchBookData = async () => {
@@ -104,6 +103,23 @@ export default function BookClubApp() {
     const delayDebounce = setTimeout(fetchBookData, 500);
     return () => clearTimeout(delayDebounce);
   }, [bookTitle]);
+
+  useEffect(() => {
+    const loadReviews = async () => {
+      const user = auth.currentUser; // Check if a user is logged in
+      if (!user) return; // Exit if no user is logged in
+
+      try {
+        const reviews = await fetchUserReviews();
+        setUserReviews(reviews);
+        setBooks(reviews); // Sync books state with user reviews
+      } catch (error) {
+        console.error("Failed to load reviews:", error);
+      }
+    };
+
+    loadReviews();
+  }, []);
 
   const handleDetailedRating = (criterion, value) => {
     setRatings({ ...ratings, [criterion]: value });
@@ -153,7 +169,7 @@ export default function BookClubApp() {
 
   return (
     <div className="p-4 max-w-xl mx-auto">
-      <Auth /> {/* Add this line to render the Auth component */}
+      <Auth onLogout={handleLogout} /> {/* Pass the handleLogout function */}
       <Card className="mb-4">
         <CardContent className="space-y-4">
           <Input
@@ -250,6 +266,22 @@ export default function BookClubApp() {
             </CardContent>
           </Card>
         ))}
+      </div>
+      <div>
+        {auth.currentUser && userReviews.length > 0 && ( // Check if logged in and there are reviews
+          <>
+            <h1>Your Reviews</h1>
+            <div>
+              {userReviews.map((review) => (
+                <div key={review.id} className="review-card">
+                  <h2>{review.title}</h2>
+                  <p>{review.review}</p>
+                  <p>Overall Rating: {review.overall}</p>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
