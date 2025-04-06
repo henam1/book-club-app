@@ -8,8 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { FaStar, FaStarHalfAlt, FaRegStar } from "react-icons/fa";
 import { saveBookReview, fetchUserReviews } from "../../firebase";
 import Auth from "./Auth";
-import { collection, query, where, getDocs } from "firebase/firestore";
-import { auth, db } from "../../firebase";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "../../firebase";
 
 const criteriaList = ["Story", "Language", "Characters", "Pacing", "Originality"];
 
@@ -60,6 +60,7 @@ export default function BookClubApp() {
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [userReviews, setUserReviews] = useState([]);
+  const [isLoadingReviews, setIsLoadingReviews] = useState(false);
 
   const handleLogout = () => {
     setUserReviews([]); // Clear user reviews on logout
@@ -105,20 +106,32 @@ export default function BookClubApp() {
   }, [bookTitle]);
 
   useEffect(() => {
-    const loadReviews = async () => {
-      const user = auth.currentUser; // Check if a user is logged in
-      if (!user) return; // Exit if no user is logged in
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        console.log("User logged in:", user); // Debugging line
+        setIsLoadingReviews(true);
+        const loadReviews = async () => {
+          try {
+            const reviews = await fetchUserReviews();
+            console.log("Fetched reviews on login:", reviews); // Debugging line
+            setUserReviews(reviews);
+            setBooks(reviews); // Sync books state with user reviews
+          } catch (error) {
+            console.error("Failed to load reviews:", error);
+          } finally {
+            setIsLoadingReviews(false);
+          }
+        };
 
-      try {
-        const reviews = await fetchUserReviews();
-        setUserReviews(reviews);
-        setBooks(reviews); // Sync books state with user reviews
-      } catch (error) {
-        console.error("Failed to load reviews:", error);
+        loadReviews();
+      } else {
+        console.log("User logged out"); // Debugging line
+        setUserReviews([]);
+        setBooks([]);
       }
-    };
+    });
 
-    loadReviews();
+    return () => unsubscribe(); // Cleanup the listener on unmount
   }, []);
 
   const handleDetailedRating = (criterion, value) => {
@@ -236,50 +249,47 @@ export default function BookClubApp() {
           <Button onClick={handleAddBook}>Add Book</Button>
         </CardContent>
       </Card>
-      <div className="space-y-4">
-        {books.map((book, index) => (
-          <Card key={index}>
-            <CardContent className="p-4">
-              <h2 className="text-xl font-semibold">{book.title}</h2>
-              <div className="text-sm text-gray-600 mb-2">
-                {book.authors && <div><strong>Author:</strong> {book.authors}</div>}
-                {book.publishedDate && <div><strong>Published:</strong> {book.publishedDate}</div>}
-              </div>
-              <div className="flex items-center space-x-2">
-                <span>Overall Rating:</span>
-                <StarRating rating={book.overall} onChange={() => {}} size="text-xl" />
-                <span className="text-sm text-gray-500 font-mono">{book.overall.toFixed(2)}</span>
-              </div>
-              {book.simpleRating === null && (
-                <ul className="list-disc pl-5 mt-2">
-                  {Object.entries(book.ratings).map(([key, val]) => (
-                    <li key={key}>{key}: {val}</li>
-                  ))}
-                </ul>
-              )}
-              {book.review && (
-                <div className="mt-4">
-                  <Label className="block text-sm text-gray-600 mb-1">Review:</Label>
-                  <p className="text-gray-800 whitespace-pre-wrap">{book.review}</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
       <div>
-        {auth.currentUser && userReviews.length > 0 && ( // Check if logged in and there are reviews
+        {auth.currentUser && (
           <>
-            <h1>Your Reviews</h1>
-            <div>
-              {userReviews.map((review) => (
-                <div key={review.id} className="review-card">
-                  <h2>{review.title}</h2>
-                  <p>{review.review}</p>
-                  <p>Overall Rating: {review.overall}</p>
-                </div>
-              ))}
-            </div>
+            <h1 className="text-2xl font-semibold mb-4">Your Reviews</h1>
+            {isLoadingReviews ? (
+              <p className="text-gray-500">Loading reviews...</p>
+            ) : books.length > 0 ? (
+              <div className="space-y-4">
+                {books.map((book, index) => (
+                  <Card key={index}>
+                    <CardContent className="p-4">
+                      <h2 className="text-xl font-semibold">{book.title}</h2>
+                      <div className="text-sm text-gray-600 mb-2">
+                        {book.authors && <div><strong>Author:</strong> {book.authors}</div>}
+                        {book.publishedDate && <div><strong>Published:</strong> {book.publishedDate}</div>}
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span>Overall Rating:</span>
+                        <StarRating rating={book.overall} onChange={() => {}} size="text-xl" />
+                        <span className="text-sm text-gray-500 font-mono">{book.overall.toFixed(2)}</span>
+                      </div>
+                      {book.simpleRating === null && (
+                        <ul className="list-disc pl-5 mt-2">
+                          {Object.entries(book.ratings).map(([key, val]) => (
+                            <li key={key}>{key}: {val}</li>
+                          ))}
+                        </ul>
+                      )}
+                      {book.review && (
+                        <div className="mt-4">
+                          <Label className="block text-sm text-gray-600 mb-1">Review:</Label>
+                          <p className="text-gray-800 whitespace-pre-wrap">{book.review}</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500">No reviews yet. Add your first review!</p>
+            )}
           </>
         )}
       </div>
