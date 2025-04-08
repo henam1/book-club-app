@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { FaStar, FaStarHalfAlt, FaRegStar } from "react-icons/fa";
-import { saveBookReview, fetchUserReviews } from "../../firebase";
+import { saveBookReview, fetchUserReviews, loginUser, registerUser, logoutUser } from "../../firebase";
 import Auth from "./Auth";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../../firebase";
@@ -49,6 +49,10 @@ const StarRating = ({ rating, onChange, size = "text-2xl", ariaLabel }) => {
 };
 
 export default function BookClubApp() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userReviews, setUserReviews] = useState([]);
+  const [books, setBooks] = useState([]);
+  const [isLoadingReviews, setIsLoadingReviews] = useState(false);
   const [bookTitle, setBookTitle] = useState("");
   const [bookInfo, setBookInfo] = useState(null);
   const [bookResults, setBookResults] = useState([]);
@@ -56,15 +60,70 @@ export default function BookClubApp() {
   const [ratings, setRatings] = useState({});
   const [simpleRating, setSimpleRating] = useState(null);
   const [reviewText, setReviewText] = useState("");
-  const [books, setBooks] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
-  const [userReviews, setUserReviews] = useState([]);
-  const [isLoadingReviews, setIsLoadingReviews] = useState(false);
 
-  const handleLogout = () => {
-    setUserReviews([]); // Clear user reviews on logout
-    setBooks([]); // Clear books state on logout
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        console.log("User logged in or already logged in on load:", user);
+        setIsLoggedIn(true);
+        setIsLoadingReviews(true);
+        const loadReviews = async () => {
+          try {
+            const reviews = await fetchUserReviews();
+            console.log("Fetched reviews:", reviews);
+            setUserReviews(reviews);
+            setBooks(reviews);
+          } catch (error) {
+            console.error("Failed to load reviews:", error);
+          } finally {
+            setIsLoadingReviews(false);
+          }
+        };
+
+        loadReviews();
+      } else {
+        console.log("No user logged in or user logged out");
+        setIsLoggedIn(false);
+        setUserReviews([]);
+        setBooks([]);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const handleLogin = async (email, password) => {
+    try {
+      await loginUser(email, password);
+      alert("Login successful!");
+      setIsLoggedIn(true);
+    } catch (error) {
+      alert("Error logging in: " + error.message);
+    }
+  };
+
+  const handleRegister = async (email, password) => {
+    try {
+      await registerUser(email, password);
+      alert("Registration successful!");
+      setIsLoggedIn(true);
+    } catch (error) {
+      alert("Error registering: " + error.message);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
+      alert("Logout successful!");
+      setIsLoggedIn(false);
+      setUserReviews([]);
+      setBooks([]);
+    } catch (error) {
+      alert("Error logging out: " + error.message);
+    }
   };
 
   useEffect(() => {
@@ -104,35 +163,6 @@ export default function BookClubApp() {
     const delayDebounce = setTimeout(fetchBookData, 500);
     return () => clearTimeout(delayDebounce);
   }, [bookTitle]);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        console.log("User logged in:", user); // Debugging line
-        setIsLoadingReviews(true);
-        const loadReviews = async () => {
-          try {
-            const reviews = await fetchUserReviews();
-            console.log("Fetched reviews on login:", reviews); // Debugging line
-            setUserReviews(reviews);
-            setBooks(reviews); // Sync books state with user reviews
-          } catch (error) {
-            console.error("Failed to load reviews:", error);
-          } finally {
-            setIsLoadingReviews(false);
-          }
-        };
-
-        loadReviews();
-      } else {
-        console.log("User logged out"); // Debugging line
-        setUserReviews([]);
-        setBooks([]);
-      }
-    });
-
-    return () => unsubscribe(); // Cleanup the listener on unmount
-  }, []);
 
   const handleDetailedRating = (criterion, value) => {
     setRatings({ ...ratings, [criterion]: value });
@@ -182,7 +212,12 @@ export default function BookClubApp() {
 
   return (
     <div className="p-4 max-w-xl mx-auto">
-      <Auth onLogout={handleLogout} /> {/* Pass the handleLogout function */}
+      <Auth
+        isLoggedIn={isLoggedIn}
+        onLogin={handleLogin}
+        onRegister={handleRegister}
+        onLogout={handleLogout}
+      />
       <Card className="mb-4">
         <CardContent className="space-y-4">
           <Input
