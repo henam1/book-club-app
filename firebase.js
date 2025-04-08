@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, addDoc, query, where, getDocs } from "firebase/firestore";
+import { getFirestore, collection, addDoc, query, where, getDocs, doc, deleteDoc, getDoc, updateDoc } from "firebase/firestore";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
 
 const firebaseConfig = {
@@ -17,20 +17,21 @@ const auth = getAuth(app);
 
 export async function saveBookReview(review) {
   try {
-    const user = auth.currentUser; // Get the currently logged-in user
-    if (!user) throw new Error("User not logged in");
+    const user = auth.currentUser;
+    if (!user) throw new Error("User not authenticated");
 
     const reviewWithUser = {
       ...review,
-      userId: user.uid, // Associate the review with the user's ID
+      userId: user.uid,
+      userEmail: user.email,
+      createdAt: new Date().toISOString()
     };
 
-    const docRef = await addDoc(collection(db, "bookReviews"), reviewWithUser);
-    console.log("Document written with ID: ", docRef.id);
+    const docRef = await addDoc(collection(db, "reviews"), reviewWithUser);
     return docRef.id;
-  } catch (e) {
-    console.error("Error adding document: ", e);
-    throw e;
+  } catch (error) {
+    console.error("Error saving review:", error);
+    throw error;
   }
 }
 
@@ -41,7 +42,7 @@ export async function fetchUserReviews() {
     if (!user) throw new Error("User not logged in");
 
     const q = query(
-      collection(db, "bookReviews"),
+      collection(db, "reviews"), // Changed from "bookReviews" to "reviews"
       where("userId", "==", user.uid) // Filter reviews by the logged-in user's ID
     );
 
@@ -90,6 +91,59 @@ export async function logoutUser() {
     console.log("User logged out");
   } catch (error) {
     console.error("Error logging out user:", error);
+    throw error;
+  }
+}
+
+export async function deleteReview(reviewId) {
+  try {
+    const user = auth.currentUser;
+    if (!user) throw new Error("User not authenticated");
+
+    const reviewRef = doc(db, "reviews", reviewId);
+    await deleteDoc(reviewRef);
+  } catch (error) {
+    console.error("Error deleting review:", error);
+    throw error;
+  }
+}
+
+export async function fetchReview(reviewId) {
+  try {
+    const user = auth.currentUser;
+    if (!user) throw new Error("User not authenticated");
+
+    const reviewRef = doc(db, "reviews", reviewId);
+    const reviewSnap = await getDoc(reviewRef);
+
+    if (!reviewSnap.exists()) return null;
+    const reviewData = reviewSnap.data();
+
+    // Verify the review belongs to the current user
+    if (reviewData.userId !== user.uid) return null;
+
+    return {
+      id: reviewSnap.id,
+      ...reviewData
+    };
+  } catch (error) {
+    console.error("Error fetching review:", error);
+    throw error;
+  }
+}
+
+export async function updateReview(reviewId, updatedReview) {
+  try {
+    const user = auth.currentUser;
+    if (!user) throw new Error("User not authenticated");
+
+    const reviewRef = doc(db, "reviews", reviewId);
+    await updateDoc(reviewRef, {
+      ...updatedReview,
+      updatedAt: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error("Error updating review:", error);
     throw error;
   }
 }
