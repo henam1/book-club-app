@@ -9,7 +9,10 @@ export default function BookSearch({ onSelectBook }) {
     const [isLoading, setIsLoading] = useState(false);
 
     const handleSearch = async () => {
-        if (!query.trim()) return;
+        if (!query.trim()) {
+            setResults([]); // Clear results if query is empty
+            return;
+        }
 
         try {
             setIsLoading(true);

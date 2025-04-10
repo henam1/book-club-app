@@ -21,7 +21,7 @@ export default function AddReviewPage() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <h1 className="text-2xl font-semibold mb-8">Add New Review</h1>
+      <h1 className="text-2xl font-semibold mb-8 dark:text-gray-100">Add New Review</h1>
       {!selectedBook ? (
         <div className="w-full">
           <BookSearch onSelectBook={setSelectedBook} />
