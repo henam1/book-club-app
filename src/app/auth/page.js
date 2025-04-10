@@ -11,6 +11,7 @@ export default function AuthPage() {
   const [error, setError] = useState("");
   const [attempts, setAttempts] = useState(0);
   const [lastAttempt, setLastAttempt] = useState(0);
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // Add this line
   const router = useRouter();
 
   useEffect(() => {
