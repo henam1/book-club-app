@@ -11,7 +11,7 @@ const nextConfig = {
       },
     ],
   },
-  basePath: '/book-club-app',
+  basePath: '/book-club-app', // Ensure this matches your GitHub Pages subpath
 };
 
 export default nextConfig;
