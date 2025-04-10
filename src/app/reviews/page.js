@@ -39,14 +39,39 @@ export default function ReviewsPage() {
   }, [router]);
 
   const handleDelete = async (reviewId) => {
-    if (window.confirm("Are you sure you want to delete this review?")) {
-      try {
-        await deleteReview(reviewId);
-        setBooks(books.filter(book => book.id !== reviewId));
-      } catch (error) {
-        console.error("Failed to delete review:", error);
-        alert("Failed to delete review");
+    if (!window.confirm("Are you sure you want to delete this review?")) {
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const user = auth.currentUser;
+      if (!user) {
+        router.push("/auth");
+        return;
       }
+      
+      await deleteReview(reviewId);
+      setBooks(prevBooks => prevBooks.filter(book => book.id !== reviewId));
+    } catch (error) {
+      console.error("Delete error:", error);
+      alert(error.message || "Failed to delete review");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEdit = (reviewId) => {
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        router.push("/auth");
+        return;
+      }
+      router.push(`/reviews/edit/${reviewId}`);
+    } catch (error) {
+      console.error("Navigation error:", error);
+      alert("Failed to navigate to edit page");
     }
   };
 
@@ -57,10 +82,10 @@ export default function ReviewsPage() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-semibold">Your Reviews</h1>
+        <h1 className="text-2xl font-semibold dark:text-gray-100">Your Reviews</h1>
         <Link 
           href="/reviews/add"
-          className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition"
+          className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 transition"
         >
           Add Review
         </Link>
@@ -68,10 +93,10 @@ export default function ReviewsPage() {
 
       {books.length === 0 ? (
         <div className="text-center py-10">
-          <p className="text-gray-600 mb-4">You haven&apos;t added any reviews yet.</p>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">You haven&apos;t added any reviews yet.</p>
           <Link 
             href="/reviews/add"
-            className="inline-flex items-center text-blue-500 hover:text-blue-600"
+            className="inline-flex items-center text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300"
           >
             <span className="mr-2">Click here to add your first review</span>
             <svg 
@@ -92,7 +117,7 @@ export default function ReviewsPage() {
       ) : (
         <div className="space-y-4">
           {books.map((book) => (
-            <Card key={book.id}>
+            <Card key={book.id} className="dark:bg-gray-800">
               <CardContent className="p-4">
                 <div className="flex gap-4">
                   {book.thumbnail && (
@@ -104,40 +129,41 @@ export default function ReviewsPage() {
                   )}
                   <div className="flex-1">
                     <div className="flex justify-between items-start">
-                      <h2 className="text-xl font-semibold">{book.title}</h2>
+                      <h2 className="text-xl font-semibold dark:text-gray-100">{book.title}</h2>
                       <div className="flex gap-2">
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => router.push(`/reviews/edit/${book.id}`)}
+                          className="dark:text-gray-200 dark:hover:bg-gray-700"
+                          onClick={() => handleEdit(book.id)}
                         >
                           Edit
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
-                          className="text-red-600 hover:bg-red-50"
+                          className="text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-gray-700"
                           onClick={() => handleDelete(book.id)}
                         >
                           Delete
                         </Button>
                       </div>
                     </div>
-                    <div className="text-sm text-gray-600 mb-2">
-                      {book.authors && <div><strong>Author:</strong> {book.authors}</div>}
-                      {book.publishedDate && <div><strong>Published:</strong> {book.publishedDate}</div>}
+                    <div className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                      {book.authors && <div><strong className="dark:text-gray-200">Author:</strong> {book.authors}</div>}
+                      {book.publishedDate && <div><strong className="dark:text-gray-200">Published:</strong> {book.publishedDate}</div>}
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-2 dark:text-gray-200">
                       <span>Overall Rating:</span>
-                      <StarRating rating={book.overall} onChange={() => {}} size="text-xl" />
-                      <span className="text-sm text-gray-500 font-mono">
-                        {book.overall.toFixed(2)}
+                      <StarRating rating={book.overall || 0} onChange={() => {}} size="text-xl" />
+                      <span className="text-sm text-gray-500 dark:text-gray-400 font-mono">
+                        {(book.overall || 0).toFixed(2)}
                       </span>
                     </div>
                     {book.review && (
                       <div className="mt-4">
-                        <div className="text-sm text-gray-600 mb-1">Review:</div>
-                        <p className="text-gray-800 whitespace-pre-wrap">{book.review}</p>
+                        <div className="text-sm text-gray-600 dark:text-gray-300 mb-1">Review:</div>
+                        <p className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{book.review}</p>
                       </div>
                     )}
                   </div>

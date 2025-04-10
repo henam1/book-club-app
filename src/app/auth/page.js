@@ -38,27 +38,27 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="auth-container border p-4 rounded-md shadow-md bg-white max-w-sm mx-auto mb-6">
+    <div className="auth-container border p-4 rounded-md shadow-md bg-white dark:bg-gray-800 max-w-sm mx-auto mb-6">
       <div>
-        <h2 className="text-lg font-semibold mb-4 text-center">Register or Login</h2>
+        <h2 className="text-lg font-semibold mb-4 text-center dark:text-gray-200">Register or Login</h2>
         <div className="space-y-3">
           <input
             type="email"
             placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600"
           />
           <input
             type="password"
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600"
           />
           <button
             onClick={handleRegister}
-            className="w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600 transition"
+            className="w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 transition"
           >
             Register
           </button>

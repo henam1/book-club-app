@@ -1,70 +1,67 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
-import { auth } from "../../../../../firebase";
+import { auth, fetchReview } from "../../../../../firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { fetchReview } from "../../../../../firebase";
 import ReviewForm from "@/components/ReviewForm";
-import { use } from "react";
 
 export default function EditReviewPage({ params }) {
-  const id = use(params).id; // Properly unwrap the params
   const router = useRouter();
   const [review, setReview] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const { id } = use(params);
 
   useEffect(() => {
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
+        console.log("User not authenticated, redirecting...");
         router.push("/auth");
         return;
       }
 
       try {
-        const reviewData = await fetchReview(id); // Use unwrapped id
-        if (!reviewData) {
-          router.push("/reviews");
-          return;
-        }
+        setIsLoading(true);
+        setError(null);
+        const reviewData = await fetchReview(id);
         setReview(reviewData);
       } catch (error) {
         console.error("Failed to fetch review:", error);
-        router.push("/reviews");
+        setError(error.message);
+        setTimeout(() => router.push("/reviews"), 2000);
       } finally {
         setIsLoading(false);
       }
     });
 
     return () => unsubscribe();
-  }, [id, router]); // Update dependency array with unwrapped id
+  }, [id, router]);
 
-  if (isLoading) return <div className="text-center">Loading...</div>;
+  if (isLoading) {
+    return <div className="text-center p-4">Loading review...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="text-center p-4">
+        <div className="text-red-600 dark:text-red-400 mb-2">{error}</div>
+        <div className="text-sm text-gray-600 dark:text-gray-400">
+          Redirecting to reviews page...
+        </div>
+      </div>
+    );
+  }
+
   if (!review) return null;
 
   return (
-    <div>
-      <h1 className="text-2xl font-semibold mb-6">Edit Review</h1>
-      <div className="flex items-start gap-4 mb-6">
-        {review.thumbnail && (
-          <img
-            src={review.thumbnail}
-            alt={review.title}
-            className="w-24 h-36 object-cover rounded-md shadow-sm"
-          />
-        )}
-        <div>
-          <h2 className="text-xl font-semibold">{review.title}</h2>
-          <p className="text-gray-600">{review.authors}</p>
-          <p className="text-sm text-gray-500">
-            Published: {review.publishedDate || 'N/A'}
-          </p>
-        </div>
-      </div>
-      <ReviewForm 
-        selectedBook={review} 
-        isEditing={true}
-        existingReview={review}
-      />
+    <div className="max-w-4xl mx-auto px-4">
+      <h1 className="text-2xl font-semibold mb-6 dark:text-gray-100">
+        Edit Review: {review.title}
+      </h1>
+      <ReviewForm selectedBook={review} isEditing={true} existingReview={review} />
     </div>
   );
 }

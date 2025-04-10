@@ -16,6 +16,7 @@ export default function ReviewForm({ selectedBook, isEditing = false, existingRe
   const [simpleRating, setSimpleRating] = useState(null);
   const [reviewText, setReviewText] = useState("");
   const [ratingType, setRatingType] = useState("simple"); // "simple" or "detailed"
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Load existing review data if editing
   useEffect(() => {
@@ -38,123 +39,113 @@ export default function ReviewForm({ selectedBook, isEditing = false, existingRe
     setRatingType("simple");
   };
 
+  const calculateOverallRating = () => {
+    const values = Object.values(ratings);
+    return values.reduce((a, b) => a + b, 0) / values.length;
+  };
+
   const handleSubmit = async () => {
-    if (!selectedBook) {
-      alert("Please select a book first");
-      return;
-    }
-
-    if (simpleRating === null && Object.keys(ratings).length === 0) {
-      alert("Please provide at least one rating");
-      return;
-    }
-
-    let overall;
-    if (simpleRating !== null) {
-      overall = simpleRating;
-    } else {
-      const values = Object.values(ratings);
-      overall = values.reduce((a, b) => a + b, 0) / values.length;
-    }
-
-    const reviewData = {
-      ...selectedBook,
-      ratings,
-      simpleRating,
-      review: reviewText,
-      overall: parseFloat(overall.toFixed(2)),
-      updatedAt: new Date().toISOString()
-    };
-
     try {
+      setIsSubmitting(true);
+
+      const reviewData = {
+        ...selectedBook,
+        overall: ratingType === 'simple' ? simpleRating : calculateOverallRating(),
+        ratings: ratingType === 'detailed' ? ratings : null,
+        review: reviewText,
+        ratingType
+      };
+
       if (isEditing) {
         await updateReview(selectedBook.id, reviewData);
       } else {
         await saveBookReview(reviewData);
       }
-      router.push("/reviews");
+
+      router.push('/reviews');
     } catch (error) {
-      alert(`Failed to ${isEditing ? 'update' : 'save'} review: ${error.message}`);
+      console.error('Error submitting review:', error);
+      alert(error.message || 'Failed to submit review');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <Card>
-      <CardContent className="space-y-6 p-6">
-        <div className="space-y-4">
+    <Card className="dark:bg-gray-800">
+      <CardContent className="p-8">
+        <div className="space-y-8">
           <Tabs defaultValue="simple" value={ratingType} onValueChange={setRatingType}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="simple">Simple Rating</TabsTrigger>
-              <TabsTrigger value="detailed">Detailed Rating</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto dark:bg-gray-700">
+              <TabsTrigger value="simple" className="dark:text-gray-200 dark:data-[state=active]:bg-gray-800">
+                Simple Rating
+              </TabsTrigger>
+              <TabsTrigger value="detailed" className="dark:text-gray-200 dark:data-[state=active]:bg-gray-800">
+                Detailed Rating
+              </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="simple" className="pt-4">
-              <div className="space-y-4">
-                <div className="text-center">
-                  <h4 className="text-lg font-medium mb-4">Overall Rating</h4>
-                  <StarRating
-                    rating={simpleRating || 0}
-                    onChange={handleSimpleRating}
-                    size="text-3xl"
-                    ariaLabel="Overall rating"
-                  />
-                  {simpleRating && (
-                    <p className="text-sm text-gray-600 mt-2">
-                      {simpleRating} out of 5 stars
-                    </p>
-                  )}
-                </div>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="detailed" className="pt-4">
-              <div className="space-y-4">
-                <h4 className="text-lg font-medium mb-4">Rate Different Aspects</h4>
-                {criteriaList.map((criterion) => (
-                  <div key={criterion} className="flex items-center justify-between mb-4">
-                    <label className="text-sm font-medium text-gray-700 w-24">
-                      {criterion}
-                    </label>
-                    <div className="flex-1">
-                      <StarRating
-                        rating={ratings[criterion] || 0}
-                        onChange={(value) => handleDetailedRating(criterion, value)}
-                        size="text-xl"
-                        ariaLabel={`Rate ${criterion}`}
-                      />
-                    </div>
-                    {ratings[criterion] && (
-                      <span className="text-sm text-gray-500 w-16 text-right">
-                        {ratings[criterion]}/5
-                      </span>
-                    )}
-                  </div>
-                ))}
-                {Object.keys(ratings).length > 0 && (
-                  <p className="text-sm text-gray-600 text-center mt-4">
-                    Average: {(Object.values(ratings).reduce((a, b) => a + b, 0) / Object.keys(ratings).length).toFixed(1)} out of 5
+            <TabsContent value="simple" className="pt-8">
+              <div className="flex flex-col items-center space-y-4">
+                <h4 className="text-xl font-medium dark:text-gray-200">Overall Rating</h4>
+                <StarRating
+                  rating={simpleRating || 0}
+                  onChange={handleSimpleRating}
+                  size="text-4xl"
+                  ariaLabel="Overall rating"
+                />
+                {simpleRating && (
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {simpleRating} out of 5 stars
                   </p>
                 )}
               </div>
             </TabsContent>
+
+            <TabsContent value="detailed" className="pt-8">
+              <div className="space-y-6 max-w-xl mx-auto">
+                <h4 className="text-xl font-medium dark:text-gray-200 mb-6 text-center">Rate Different Aspects</h4>
+                {criteriaList.map((criterion) => (
+                  <div key={criterion} className="flex flex-col items-center gap-2">
+                    <label className="text-base font-medium text-gray-700 dark:text-gray-300">
+                      {criterion}
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <StarRating
+                        rating={ratings[criterion] || 0}
+                        onChange={(value) => handleDetailedRating(criterion, value)}
+                        size="text-2xl"
+                        ariaLabel={`Rate ${criterion}`}
+                      />
+                      {ratings[criterion] && (
+                        <span className="text-sm text-gray-500 dark:text-gray-400 min-w-[3rem]">
+                          {ratings[criterion]}/5
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </TabsContent>
           </Tabs>
 
-          <div className="pt-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+          <div className="pt-8">
+            <label className="block text-lg font-medium text-gray-700 dark:text-gray-300 mb-3">
               Your Review
             </label>
             <Textarea
               placeholder="Write your thoughts about the book..."
               value={reviewText}
               onChange={(e) => setReviewText(e.target.value)}
-              rows={4}
-              className="w-full"
+              rows={6}
+              className="w-full text-base dark:bg-gray-700 dark:text-gray-200"
             />
           </div>
 
           <Button
             onClick={handleSubmit}
-            className="w-full bg-blue-500 text-white mt-4"
+            className="w-full max-w-md mx-auto block bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white mt-8 py-2.5"
+            disabled={isSubmitting}
           >
             {isEditing ? 'Update Review' : 'Submit Review'}
           </Button>

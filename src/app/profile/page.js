@@ -33,15 +33,15 @@ export default function ProfilePage() {
 
   return (
     <div className="max-w-md mx-auto">
-      <h1 className="text-2xl font-semibold mb-6">Profile</h1>
-      <div className="bg-white shadow rounded-lg p-6">
+      <h1 className="text-2xl font-semibold mb-6 dark:text-gray-100">Profile</h1>
+      <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
         <div className="mb-4">
-          <label className="text-sm text-gray-600">Email</label>
-          <div className="text-lg">{user.email}</div>
+          <label className="text-sm text-gray-600 dark:text-gray-400">Email</label>
+          <div className="text-lg text-gray-900 dark:text-gray-100">{user.email}</div>
         </div>
         <button
           onClick={handleLogout}
-          className="w-full bg-red-500 text-white py-2 rounded-md hover:bg-red-600 transition"
+          className="w-full bg-red-500 text-white py-2 rounded-md hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700 transition"
         >
           Logout
         </button>

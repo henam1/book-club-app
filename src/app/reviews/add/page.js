@@ -20,24 +20,26 @@ export default function AddReviewPage() {
   }, [router]);
 
   return (
-    <div>
-      <h1 className="text-2xl font-semibold mb-6">Add New Review</h1>
+    <div className="max-w-4xl mx-auto">
+      <h1 className="text-2xl font-semibold mb-8">Add New Review</h1>
       {!selectedBook ? (
-        <BookSearch onSelectBook={setSelectedBook} />
+        <div className="w-full">
+          <BookSearch onSelectBook={setSelectedBook} />
+        </div>
       ) : (
-        <div className="space-y-4">
-          <div className="flex items-start gap-4 mb-6">
+        <div className="space-y-6">
+          <div className="flex items-start gap-8 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
             {selectedBook.thumbnail && (
               <img
                 src={selectedBook.thumbnail}
                 alt={selectedBook.title}
-                className="w-24 h-36 object-cover rounded-md shadow-sm"
+                className="w-32 h-48 object-cover rounded-md shadow-sm"
               />
             )}
-            <div>
-              <h2 className="text-xl font-semibold">{selectedBook.title}</h2>
-              <p className="text-gray-600">{selectedBook.authors}</p>
-              <p className="text-sm text-gray-500">
+            <div className="flex-1">
+              <h2 className="text-2xl font-semibold mb-2">{selectedBook.title}</h2>
+              <p className="text-gray-600 dark:text-gray-300 text-lg mb-2">{selectedBook.authors}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
                 Published: {selectedBook.publishedDate || 'N/A'}
               </p>
               <Button 
@@ -49,7 +51,9 @@ export default function AddReviewPage() {
               </Button>
             </div>
           </div>
-          <ReviewForm selectedBook={selectedBook} />
+          <div className="mt-8">
+            <ReviewForm selectedBook={selectedBook} />
+          </div>
         </div>
       )}
     </div>

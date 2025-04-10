@@ -4,10 +4,12 @@ import { usePathname } from "next/navigation";
 import { auth } from "../../firebase";
 import { useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
+import { useTheme } from "./ThemeProvider";
 
 export default function Navigation() {
   const pathname = usePathname();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -18,9 +20,9 @@ export default function Navigation() {
   }, []);
 
   return (
-    <nav className="bg-white shadow-sm">
+    <nav className="bg-white dark:bg-gray-800 shadow-sm">
       <div className="max-w-5xl mx-auto px-4">
-        <div className="flex justify-between h-16">
+        <div className="flex justify-between items-center h-16">
           <div className="flex space-x-8">
             <Link 
               href="/"
@@ -63,6 +65,12 @@ export default function Navigation() {
               </Link>
             ) : null}
           </div>
+          <button
+            onClick={toggleTheme}
+            className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
+          >
+            {theme === 'dark' ? '🌞' : '🌙'}
+          </button>
         </div>
       </div>
     </nav>
