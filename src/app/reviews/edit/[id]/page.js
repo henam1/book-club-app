@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, use } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { auth, fetchReview } from "../../../../../firebase";
 import { onAuthStateChanged } from "firebase/auth";
@@ -10,8 +10,7 @@ export default function EditReviewPage({ params }) {
   const [review, setReview] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  const { id } = use(params);
+  const [id, setId] = useState(params?.id);
 
   useEffect(() => {
 

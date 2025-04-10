@@ -1,7 +1,9 @@
 export async function generateStaticParams() {
-  return []; // Return empty array since our pages are dynamic
+  return [
+    { id: 'placeholder' }  // Minimum one route required for static export
+  ];
 }
 
 export default function EditLayout({ children }) {
-  return children;
+  return <>{children}</>;
 }
