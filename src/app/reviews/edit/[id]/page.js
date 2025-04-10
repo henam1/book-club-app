@@ -5,10 +5,6 @@ import { auth, fetchReview } from "../../../../../firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import ReviewForm from "@/components/ReviewForm";
 
-export async function generateStaticParams() {
-  return [];  // Return empty array since our pages are dynamic
-}
-
 export default function EditReviewPage({ params }) {
   const router = useRouter();
   const [review, setReview] = useState(null);
