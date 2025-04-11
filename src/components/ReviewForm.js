@@ -39,9 +39,26 @@ export default function ReviewForm({ selectedBook, isEditing = false, existingRe
     setRatingType("simple");
   };
 
+  // Add new handler for clearing ratings
+  const handleClearRating = (criterion) => {
+    if (ratingType === 'simple') {
+      setSimpleRating(0);
+    } else {
+      setRatings({ ...ratings, [criterion]: 0 });
+    }
+  };
+
   const calculateOverallRating = () => {
-    const values = Object.values(ratings);
-    return values.reduce((a, b) => a + b, 0) / values.length;
+    // Get all criteria that should be rated
+    const totalCriteria = criteriaList.length;
+    
+    // Sum all existing ratings (including 0s)
+    const sum = criteriaList.reduce((acc, criterion) => {
+      return acc + (ratings[criterion] || 0);
+    }, 0);
+  
+    // Divide by total number of criteria
+    return sum / totalCriteria;
   };
 
   const handleSubmit = async () => {
@@ -88,17 +105,25 @@ export default function ReviewForm({ selectedBook, isEditing = false, existingRe
             <TabsContent value="simple" className="pt-8">
               <div className="flex flex-col items-center space-y-4">
                 <h4 className="text-2xl font-medium dark:text-gray-200">Overall Rating</h4>
-                <StarRating
-                  rating={simpleRating || 0}
-                  onChange={handleSimpleRating}
-                  size="text-5xl"
-                  ariaLabel="Overall rating"
-                />
-                {simpleRating && (
-                  <p className="text-lg text-gray-600 dark:text-gray-400">
-                    {simpleRating} out of 5 stars
-                  </p>
-                )}
+                <div className="flex items-center gap-3">
+                  <StarRating
+                    rating={simpleRating || 0}
+                    onChange={handleSimpleRating}
+                    size="text-5xl"
+                    ariaLabel="Overall rating"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleClearRating('simple')}
+                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  >
+                    Clear
+                  </Button>
+                </div>
+                <p className="text-lg text-gray-600 dark:text-gray-400">
+                  {simpleRating || 0} out of 5 stars
+                </p>
               </div>
             </TabsContent>
 
@@ -117,11 +142,17 @@ export default function ReviewForm({ selectedBook, isEditing = false, existingRe
                         size="text-4xl"
                         ariaLabel={`Rate ${criterion}`}
                       />
-                      {ratings[criterion] && (
-                        <span className="text-lg text-gray-500 dark:text-gray-400 min-w-[4rem]">
-                          {ratings[criterion]}/5
-                        </span>
-                      )}
+                      <span className="text-lg text-gray-500 dark:text-gray-400 min-w-[4rem]">
+                        {ratings[criterion] || 0}/5
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleClearRating(criterion)}
+                        className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                      >
+                        Clear
+                      </Button>
                     </div>
                   </div>
                 ))}
