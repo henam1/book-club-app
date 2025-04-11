@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, addDoc, query, where, getDocs, doc, deleteDoc, getDoc, updateDoc } from "firebase/firestore";
+import { getFirestore, collection, addDoc, query, where, getDocs, doc, deleteDoc, updateDoc } from "firebase/firestore";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
 
 const firebaseConfig = {
@@ -15,49 +15,11 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-export async function saveBookReview(reviewData) {
-  try {
-    const user = auth.currentUser;
-    if (!user) throw new Error("Not authenticated");
-
-    const review = {
-      ...reviewData,
-      id: reviewData.id || crypto.randomUUID(), // Generate a unique ID if not provided
-      userId: user.uid,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-
-    const docRef = await addDoc(collection(db, "reviews"), review);
-    return docRef.id;
-  } catch (error) {
-    console.error("Error saving review:", error);
-    throw error;
-  }
-}
-
-export async function fetchUserReviews() {
-  try {
-    const user = auth.currentUser;
-    if (!user) throw new Error("User not logged in");
-
-    const q = query(
-      collection(db, "reviews"),
-      where("userId", "==", user.uid)
-    );
-
-    const querySnapshot = await getDocs(q);
-    const userReviews = querySnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-
-    return userReviews;
-  } catch (error) {
-    console.error("Error fetching user reviews:", error);
-    throw error;
-  }
-}
+export const BOOK_STATUSES = {
+  WANT_TO_READ: 'want-to-read',
+  READING: 'reading',
+  FINISHED: 'finished'
+};
 
 export async function registerUser(email, password) {
   try {
@@ -88,83 +50,154 @@ export async function logoutUser() {
   }
 }
 
-export async function deleteReview(reviewId) {
+export async function saveBook(bookData) {
   try {
     const user = auth.currentUser;
     if (!user) throw new Error("Not authenticated");
 
-    // Query for the document with matching id attribute
-    const reviewsCollection = collection(db, "reviews");
-    const q = query(
-      reviewsCollection, 
-      where("id", "==", reviewId),
-      where("userId", "==", user.uid)
-    );
-    const querySnapshot = await getDocs(q);
-
-    if (querySnapshot.empty) {
-      throw new Error("Review not found");
-    }
-
-    // Delete the document using its document ID
-    const reviewDoc = querySnapshot.docs[0];
-    await deleteDoc(doc(db, "reviews", reviewDoc.id));
-  } catch (error) {
-    console.error("Error deleting review:", error);
-    throw error;
-  }
-}
-
-export async function fetchReview(reviewId) {
-  try {
-    if (!reviewId) throw new Error("Review ID is required");
-    
-    const user = auth.currentUser;
-    if (!user) throw new Error("Not authenticated");
-
-    const reviewsCollection = collection(db, "reviews");
-    const q = query(reviewsCollection, where("id", "==", reviewId), where("userId", "==", user.uid));
-    const querySnapshot = await getDocs(q);
-
-    if (querySnapshot.empty) {
-      throw new Error("Review not found");
-    }
-
-    const reviewDoc = querySnapshot.docs[0];
-    return { id: reviewDoc.id, ...reviewDoc.data() };
-  } catch (error) {
-    console.error("Error fetching review:", error);
-    throw error;
-  }
-}
-
-export async function updateReview(reviewId, updatedData) {
-  try {
-    const user = auth.currentUser;
-    if (!user) throw new Error("You must be logged in to update a review");
-
-    // Query for the document with matching id attribute
-    const reviewsCollection = collection(db, "reviews");
-    const q = query(
-      reviewsCollection, 
-      where("id", "==", reviewId),
-      where("userId", "==", user.uid)
-    );
-    const querySnapshot = await getDocs(q);
-
-    if (querySnapshot.empty) {
-      throw new Error("Review not found");
-    }
-
-    // Update the document using its document ID
-    const reviewDoc = querySnapshot.docs[0];
-    await updateDoc(doc(db, "reviews", reviewDoc.id), {
-      ...updatedData,
+    const book = {
+      id: bookData.id || crypto.randomUUID(),
       userId: user.uid,
+      title: bookData.title,
+      authors: bookData.authors,
+      publishedDate: bookData.publishedDate,
+      thumbnail: bookData.thumbnail,
+      status: bookData.status || BOOK_STATUSES.WANT_TO_READ,
+      startDate: bookData.startDate || null,
+      completedDate: bookData.completedDate || null,
+      ratings: bookData.ratings || null,
+      review: bookData.review || null,
+      createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
-    });
+    };
+
+    const docRef = await addDoc(collection(db, "books"), book);
+    return docRef.id;
   } catch (error) {
-    console.error("Error updating review:", error);
+    console.error("Error saving book:", error);
+    throw error;
+  }
+}
+
+export async function updateBook(bookId, updateData) {
+  try {
+    const user = auth.currentUser;
+    if (!user) throw new Error("Not authenticated");
+
+    const booksCollection = collection(db, "books");
+    const q = query(
+      booksCollection,
+      where("id", "==", bookId),
+      where("userId", "==", user.uid)
+    );
+    const querySnapshot = await getDocs(q);
+
+    if (querySnapshot.empty) {
+      throw new Error("Book not found");
+    }
+
+    const bookDoc = querySnapshot.docs[0];
+    const currentData = bookDoc.data();
+
+    if (updateData.status) {
+      if (updateData.status === BOOK_STATUSES.READING && currentData.status !== BOOK_STATUSES.READING) {
+        updateData.startDate = new Date().toISOString();
+      } else if (updateData.status === BOOK_STATUSES.FINISHED) {
+        updateData.completedDate = new Date().toISOString();
+      }
+    }
+
+    if (updateData.review) {
+      updateData.review = {
+        text: updateData.review.text || "",
+        ratingType: updateData.review.ratingType || "simple",
+        simpleRating: updateData.review.simpleRating || null,
+        ratings: updateData.review.ratings || null,
+        overall: updateData.review.overall || null
+      };
+    }
+
+    const finalUpdateData = {
+      ...updateData,
+      updatedAt: new Date().toISOString()
+    };
+
+    await updateDoc(doc(db, "books", bookDoc.id), finalUpdateData);
+  } catch (error) {
+    console.error("Error updating book:", error);
+    throw error;
+  }
+}
+
+export async function deleteBook(bookId) {
+  try {
+    const user = auth.currentUser;
+    if (!user) throw new Error("Not authenticated");
+
+    const booksCollection = collection(db, "books");
+    const q = query(
+      booksCollection,
+      where("id", "==", bookId),
+      where("userId", "==", user.uid)
+    );
+    const querySnapshot = await getDocs(q);
+
+    if (querySnapshot.empty) {
+      throw new Error("Book not found");
+    }
+
+    const bookDoc = querySnapshot.docs[0];
+    await deleteDoc(doc(db, "books", bookDoc.id));
+  } catch (error) {
+    console.error("Error deleting book:", error);
+    throw error;
+  }
+}
+
+export async function fetchUserBooks() {
+  try {
+    const user = auth.currentUser;
+    if (!user) throw new Error("User not logged in");
+
+    const q = query(
+      collection(db, "books"),
+      where("userId", "==", user.uid)
+    );
+
+    const querySnapshot = await getDocs(q);
+    const userBooks = querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    return userBooks;
+  } catch (error) {
+    console.error("Error fetching user books:", error);
+    throw error;
+  }
+}
+
+export async function fetchBook(bookId) {
+  try {
+    const user = auth.currentUser;
+    if (!user) throw new Error("Not authenticated");
+
+    const booksCollection = collection(db, "books");
+    const q = query(
+      booksCollection,
+      where("id", "==", bookId),
+      where("userId", "==", user.uid)
+    );
+    const querySnapshot = await getDocs(q);
+
+    if (querySnapshot.empty) {
+      throw new Error("Book not found");
+    }
+
+    const bookDoc = querySnapshot.docs[0];
+    return { id: bookDoc.id, ...bookDoc.data() };
+  } catch (error) {
+    console.error("Error fetching book:", error);
     throw error;
   }
 }
