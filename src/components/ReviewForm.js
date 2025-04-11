@@ -87,15 +87,15 @@ export default function ReviewForm({ selectedBook, isEditing = false, existingRe
             
             <TabsContent value="simple" className="pt-8">
               <div className="flex flex-col items-center space-y-4">
-                <h4 className="text-xl font-medium dark:text-gray-200">Overall Rating</h4>
+                <h4 className="text-2xl font-medium dark:text-gray-200">Overall Rating</h4>
                 <StarRating
                   rating={simpleRating || 0}
                   onChange={handleSimpleRating}
-                  size="text-4xl"
+                  size="text-5xl"
                   ariaLabel="Overall rating"
                 />
                 {simpleRating && (
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-lg text-gray-600 dark:text-gray-400">
                     {simpleRating} out of 5 stars
                   </p>
                 )}
@@ -104,21 +104,21 @@ export default function ReviewForm({ selectedBook, isEditing = false, existingRe
 
             <TabsContent value="detailed" className="pt-8">
               <div className="space-y-6 max-w-xl mx-auto">
-                <h4 className="text-xl font-medium dark:text-gray-200 mb-6 text-center">Rate Different Aspects</h4>
+                <h4 className="text-2xl font-medium dark:text-gray-200 mb-6 text-center">Rate Different Aspects</h4>
                 {criteriaList.map((criterion) => (
-                  <div key={criterion} className="flex flex-col items-center gap-2">
-                    <label className="text-base font-medium text-gray-700 dark:text-gray-300">
+                  <div key={criterion} className="flex flex-col items-center gap-3">
+                    <label className="text-lg font-medium text-gray-700 dark:text-gray-300">
                       {criterion}
                     </label>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                       <StarRating
                         rating={ratings[criterion] || 0}
                         onChange={(value) => handleDetailedRating(criterion, value)}
-                        size="text-2xl"
+                        size="text-4xl"
                         ariaLabel={`Rate ${criterion}`}
                       />
                       {ratings[criterion] && (
-                        <span className="text-sm text-gray-500 dark:text-gray-400 min-w-[3rem]">
+                        <span className="text-lg text-gray-500 dark:text-gray-400 min-w-[4rem]">
                           {ratings[criterion]}/5
                         </span>
                       )}

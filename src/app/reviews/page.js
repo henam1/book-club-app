@@ -210,36 +210,36 @@ export default function ReviewsPage() {
 
                       {expandedReviews[book.id] && book.ratings && (
                         <div className="mt-2 space-y-1 text-sm text-gray-600 dark:text-gray-300">
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
                               {['Story', 'Characters', 'Language'].map((category) => (
-                                <div key={category} className="flex items-center justify-between">
-                                  <span className="capitalize">{category}:</span>
-                                  <div className="flex items-center">
+                                <div key={category} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                                  <span className="capitalize min-w-[100px]">{category}:</span>
+                                  <div className="flex items-center gap-2">
                                     <StarRating 
                                       rating={Number(book.ratings[category]) || 0} 
                                       onChange={() => {}} 
                                       size="text-sm" 
                                     />
-                                    <span className="ml-2 text-xs">
-                                      {Number(book.ratings[category])?.toFixed(1) || '0.0'}
+                                    <span className="ml-2 text-xs min-w-[32px]">
+                                      {(Number(book.ratings[category]) || 0).toFixed(2)}
                                     </span>
                                   </div>
                                 </div>
                               ))}
                             </div>
-                            <div>
+                            <div className="space-y-2">
                               {['Pacing', 'Originality'].map((category) => (
-                                <div key={category} className="flex items-center justify-between">
-                                  <span className="capitalize">{category}:</span>
-                                  <div className="flex items-center">
+                                <div key={category} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                                  <span className="capitalize min-w-[100px]">{category}:</span>
+                                  <div className="flex items-center gap-2">
                                     <StarRating 
                                       rating={Number(book.ratings[category]) || 0} 
                                       onChange={() => {}} 
                                       size="text-sm" 
                                     />
-                                    <span className="ml-2 text-xs">
-                                      {Number(book.ratings[category])?.toFixed(1) || '0.0'}
+                                    <span className="ml-2 text-xs min-w-[32px]">
+                                      {(Number(book.ratings[category]) || 0).toFixed(2)}
                                     </span>
                                   </div>
                                 </div>
