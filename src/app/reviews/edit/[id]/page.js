@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import { auth, fetchReview } from "../../../../../firebase";
 import { onAuthStateChanged } from "firebase/auth";
@@ -10,10 +10,11 @@ export default function EditReviewPage({ params }) {
   const [review, setReview] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [id, setId] = useState(params?.id);
+  
+  // Use React.use() to unwrap params
+  const { id } = use(params);
 
   useEffect(() => {
-
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
         console.log("User not authenticated, redirecting...");

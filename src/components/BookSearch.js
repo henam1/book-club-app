@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import Image from 'next/image';
 
 export default function BookSearch({ onSelectBook }) {
     const [query, setQuery] = useState("");
@@ -97,11 +98,16 @@ export default function BookSearch({ onSelectBook }) {
                         >
                             <div className="flex gap-4">
                                 {book.thumbnail && (
-                                    <img
-                                        src={book.thumbnail}
-                                        alt={book.title}
-                                        className="w-16 h-24 object-cover"
-                                    />
+                                    <div className="flex-shrink-0 w-24 h-32 relative">
+                                        <Image
+                                            src={book.thumbnail}
+                                            alt={`Cover of ${book.title}`}
+                                            fill
+                                            className="object-cover rounded"
+                                            sizes="(max-width: 96px) 100vw, 96px"
+                                            priority={false}
+                                        />
+                                    </div>
                                 )}
                                 <div>
                                     <h3 className="font-semibold dark:text-gray-200">{book.title}</h3>
