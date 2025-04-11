@@ -110,7 +110,7 @@ export default function ReviewForm({ selectedBook, isEditing = false, existingRe
                   <StarRating
                     rating={simpleRating || 0}
                     onChange={handleSimpleRating}
-                    size="text-4xl sm:text-5xl"
+                    size="text-5xl sm:text-6xl"  // Increased from text-4xl sm:text-5xl
                     ariaLabel="Overall rating"
                   />
                   <Button
@@ -142,7 +142,7 @@ export default function ReviewForm({ selectedBook, isEditing = false, existingRe
                         <StarRating
                           rating={ratings[criterion] || 0}
                           onChange={(value) => handleDetailedRating(criterion, value)}
-                          size="text-3xl sm:text-4xl"
+                          size="text-4xl sm:text-5xl"  // Increased from text-3xl sm:text-4xl
                           ariaLabel={`Rate ${criterion}`}
                         />
                         <span className="text-sm sm:text-lg text-gray-500 dark:text-gray-400 min-w-[3rem]">
