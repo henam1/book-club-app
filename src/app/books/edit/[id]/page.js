@@ -1,15 +1,16 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import { auth, fetchBook } from "../../../../../firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import BookForm from "@/components/BookForm";  // Update import name
+import BookForm from "@/components/BookForm";
 
 export default function EditBookPage({ params }) {
   const router = useRouter();
   const [book, setBook] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const resolvedParams = use(params);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -19,7 +20,7 @@ export default function EditBookPage({ params }) {
       }
 
       try {
-        const bookData = await fetchBook(params.id);
+        const bookData = await fetchBook(resolvedParams.id);
         if (!bookData) {
           setError("Book not found");
           setTimeout(() => router.push("/books"), 2000);
@@ -35,7 +36,7 @@ export default function EditBookPage({ params }) {
     });
 
     return () => unsubscribe();
-  }, [params.id, router]);
+  }, [resolvedParams.id, router]);
 
   if (isLoading) {
     return <div className="text-center p-4">Loading book...</div>;
