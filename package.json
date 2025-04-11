@@ -2,14 +2,11 @@
   "name": "book-club-app",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://henam1.github.io/book-club-app/",
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d out"
+    "lint": "next lint"
   },
   "dependencies": {
     "@radix-ui/react-label": "^2.1.2",
@@ -31,7 +28,6 @@
     "@tailwindcss/postcss": "^4",
     "eslint": "^9",
     "eslint-config-next": "15.2.4",
-    "gh-pages": "^6.3.0",
     "tailwindcss": "^4"
   }
 }
