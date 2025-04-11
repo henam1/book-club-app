@@ -102,21 +102,22 @@ export default function ReviewForm({ selectedBook, isEditing = false, existingRe
               </TabsTrigger>
             </TabsList>
             
+            {/* Simple Rating section */}
             <TabsContent value="simple" className="pt-8">
               <div className="flex flex-col items-center space-y-4">
                 <h4 className="text-2xl font-medium dark:text-gray-200">Overall Rating</h4>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-col sm:flex-row items-center gap-2">
                   <StarRating
                     rating={simpleRating || 0}
                     onChange={handleSimpleRating}
-                    size="text-5xl"
+                    size="text-4xl sm:text-5xl"
                     ariaLabel="Overall rating"
                   />
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => handleClearRating('simple')}
-                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 h-8 px-2"
                   >
                     Clear
                   </Button>
@@ -127,6 +128,7 @@ export default function ReviewForm({ selectedBook, isEditing = false, existingRe
               </div>
             </TabsContent>
 
+            {/* Detailed Rating section */}
             <TabsContent value="detailed" className="pt-8">
               <div className="space-y-6 max-w-xl mx-auto">
                 <h4 className="text-2xl font-medium dark:text-gray-200 mb-6 text-center">Rate Different Aspects</h4>
@@ -135,21 +137,23 @@ export default function ReviewForm({ selectedBook, isEditing = false, existingRe
                     <label className="text-lg font-medium text-gray-700 dark:text-gray-300">
                       {criterion}
                     </label>
-                    <div className="flex items-center gap-3">
-                      <StarRating
-                        rating={ratings[criterion] || 0}
-                        onChange={(value) => handleDetailedRating(criterion, value)}
-                        size="text-4xl"
-                        ariaLabel={`Rate ${criterion}`}
-                      />
-                      <span className="text-lg text-gray-500 dark:text-gray-400 min-w-[4rem]">
-                        {ratings[criterion] || 0}/5
-                      </span>
+                    <div className="flex flex-col sm:flex-row items-center gap-2">
+                      <div className="flex items-center gap-2">
+                        <StarRating
+                          rating={ratings[criterion] || 0}
+                          onChange={(value) => handleDetailedRating(criterion, value)}
+                          size="text-3xl sm:text-4xl"
+                          ariaLabel={`Rate ${criterion}`}
+                        />
+                        <span className="text-sm sm:text-lg text-gray-500 dark:text-gray-400 min-w-[3rem]">
+                          {ratings[criterion] || 0}/5
+                        </span>
+                      </div>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => handleClearRating(criterion)}
-                        className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                        className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 h-8 px-2"
                       >
                         Clear
                       </Button>
