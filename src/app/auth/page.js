@@ -1,164 +1,170 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { auth, loginUser, registerUser } from "../../../firebase";
-import { onAuthStateChanged } from "firebase/auth";
+import { registerUser, loginUser, resetPassword } from "../../../firebase";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { validatePassword } from "@/utils/validation";
+import { PasswordRequirements } from "@/components/PasswordRequirements";
 
 export default function AuthPage() {
+  const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [attempts, setAttempts] = useState(0);
-  const [lastAttempt, setLastAttempt] = useState(0);
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // Add this line
+  const [isResetPassword, setIsResetPassword] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
   const router = useRouter();
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setIsLoggedIn(!!user);
-      if (user) router.push("/profile");
-    });
-
-    return () => unsubscribe();
-  }, [router]);
-
-  // Password validation
-  const validatePassword = (password) => {
-    const minLength = 8;
-    const hasUpperCase = /[A-Z]/.test(password);
-    const hasLowerCase = /[a-z]/.test(password);
-    const hasNumbers = /\d/.test(password);
-    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-
-    if (password.length < minLength) return "Password must be at least 8 characters";
-    if (!hasUpperCase) return "Password must contain an uppercase letter";
-    if (!hasLowerCase) return "Password must contain a lowercase letter";
-    if (!hasNumbers) return "Password must contain a number";
-    if (!hasSpecialChar) return "Password must contain a special character";
-    return "";
-  };
-
-  // Email validation
-  const validateEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) return "Please enter a valid email address";
-    return "";
-  };
-
-  // Rate limiting
-  const checkRateLimit = () => {
-    const now = Date.now();
-    if (attempts >= 5 && now - lastAttempt < 15 * 60 * 1000) {
-      return "Too many attempts. Please try again in 15 minutes.";
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    
+    if (!isLogin) {
+      const validation = validatePassword(password);
+      if (!validation.isValid) {
+        setError("Password doesn't meet requirements");
+        return;
+      }
     }
-    return "";
-  };
-
-  const handleLogin = async () => {
+    
     try {
-      setError("");
-      
-      // Validate inputs
-      const emailError = validateEmail(email);
-      if (emailError) {
-        setError(emailError);
+      if (isResetPassword) {
+        await resetPassword(email);
+        setResetSent(true);
         return;
       }
 
-      // Check rate limiting
-      const rateLimitError = checkRateLimit();
-      if (rateLimitError) {
-        setError(rateLimitError);
-        return;
+      if (isLogin) {
+        await loginUser(email, password);
+      } else {
+        await registerUser(email, password);
       }
-
-      setIsLoading(true);
-      setAttempts(prev => prev + 1);
-      setLastAttempt(Date.now());
-
-      await loginUser(email, password);
-      router.push("/reviews");
+      router.push("/books");
     } catch (error) {
-      console.error("Login error:", error);
-      setError(error.message || "Failed to login");
-      setAttempts(prev => prev + 1);
-    } finally {
-      setIsLoading(false);
+      setError(error.message);
     }
   };
 
-  const handleRegister = async () => {
-    try {
-      setError("");
-
-      // Validate inputs
-      const emailError = validateEmail(email);
-      if (emailError) {
-        setError(emailError);
-        return;
-      }
-
-      const passwordError = validatePassword(password);
-      if (passwordError) {
-        setError(passwordError);
-        return;
-      }
-
-      setIsLoading(true);
-      await registerUser(email, password);
-      router.push("/reviews");
-    } catch (error) {
-      console.error("Registration error:", error);
-      setError(error.message || "Failed to register");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  if (isResetPassword) {
+    return (
+      <div className="max-w-md mx-auto px-4 py-8">
+        <h1 className="text-2xl font-semibold mb-6 dark:text-gray-100">Reset Password</h1>
+        {resetSent ? (
+          <div className="bg-green-50 dark:bg-gray-800 p-4 rounded-lg mb-4">
+            <p className="text-green-800 dark:text-green-400">
+              Password reset email sent! Check your inbox.
+            </p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Email
+              </label>
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full"
+              />
+            </div>
+            {error && (
+              <div className="text-red-500 text-sm">{error}</div>
+            )}
+            <div className="flex gap-4">
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1"
+                onClick={() => setIsResetPassword(false)}
+              >
+                Back to Login
+              </Button>
+              <Button type="submit" className="flex-1">
+                Send Reset Email
+              </Button>
+            </div>
+          </form>
+        )}
+      </div>
+    );
+  }
 
   return (
-    <div className="auth-container border p-4 rounded-md shadow-md bg-white dark:bg-gray-800 max-w-sm mx-auto mb-6">
-      <div>
-        <h2 className="text-lg font-semibold mb-4 text-center dark:text-gray-200">
-          Register or Login
-        </h2>
-        {error && (
-          <div className="mb-4 p-2 bg-red-100 border border-red-400 text-red-700 rounded">
-            {error}
-          </div>
-        )}
-        <div className="space-y-3">
-          <input
+    <div className="max-w-md mx-auto px-4 py-8">
+      <h1 className="text-2xl font-semibold mb-6 dark:text-gray-100">
+        {isLogin ? "Login" : "Create Account"}
+      </h1>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Email
+          </label>
+          <Input
             type="email"
-            placeholder="Email"
             value={email}
-            onChange={(e) => setEmail(e.target.value.trim())}
-            disabled={isLoading}
-            className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600"
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="w-full"
           />
-          <input
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Password
+          </label>
+          <Input
             type="password"
-            placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            disabled={isLoading}
-            className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600"
+            required
+            className="w-full"
+            minLength={8}
           />
-          <button
-            onClick={handleRegister}
-            disabled={isLoading}
-            className="w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 transition disabled:opacity-50"
-          >
-            {isLoading ? "Processing..." : "Register"}
-          </button>
-          <button
-            onClick={handleLogin}
-            disabled={isLoading}
-            className="w-full bg-gray-500 text-white py-2 rounded-md hover:bg-gray-600 transition disabled:opacity-50"
-          >
-            {isLoading ? "Processing..." : "Login"}
-          </button>
+          {!isLogin && <PasswordRequirements />}
         </div>
+        {error && (
+          <div className="text-red-500 text-sm">{error}</div>
+        )}
+        <Button type="submit" className="w-full">
+          {isLogin ? "Login" : "Create Account"}
+        </Button>
+      </form>
+
+      <div className="mt-4 text-center">
+        {isLogin ? (
+          <>
+            <button
+              type="button"
+              onClick={() => setIsResetPassword(true)}
+              className="text-blue-500 hover:text-blue-600 text-sm"
+            >
+              Forgot password?
+            </button>
+            <div className="mt-2">
+              Don&apos;t have an account?{" "}
+              <button
+                type="button"
+                onClick={() => setIsLogin(false)}
+                className="text-blue-500 hover:text-blue-600"
+              >
+                Sign up
+              </button>
+            </div>
+          </>
+        ) : (
+          <div>
+            Already have an account?{" "}
+            <button
+              type="button"
+              onClick={() => setIsLogin(true)}
+              className="text-blue-500 hover:text-blue-600"
+            >
+              Login
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
