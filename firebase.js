@@ -87,6 +87,7 @@ export async function saveBook(bookData) {
       completedDate: bookData.completedDate || null,
       ratings: bookData.ratings || null,
       review: bookData.review || null,
+      description: bookData.description || '',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
