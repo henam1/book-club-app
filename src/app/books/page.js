@@ -238,84 +238,89 @@ export default function BooksPage() {
                       </div>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row items-center gap-2 dark:text-gray-200 mt-4">
-                      <span>Overall Rating:</span>
-                      <div className="flex items-center gap-2">
-                        <StarRating rating={getOverallRating(book)} onChange={() => {}} size="text-xl" />
-                        <span className="text-sm text-gray-500 dark:text-gray-400 font-mono">
-                          {getOverallRating(book).toFixed(2)}
-                        </span>
-                        {getDetailedRatings(book) && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => toggleBookExpand(book.id)}
-                            className="p-1 h-auto"
-                          >
-                            {expandedBooks[book.id] ? (
-                              <ChevronUp className="h-4 w-4" />
-                            ) : (
-                              <ChevronDown className="h-4 w-4" />
+                    {/* Only show ratings for finished books */}
+                    {book.status === BOOK_STATUSES.FINISHED && (
+                      <>
+                        <div className="flex flex-col sm:flex-row items-center gap-2 dark:text-gray-200 mt-4">
+                          <span>Overall Rating:</span>
+                          <div className="flex items-center gap-2">
+                            <StarRating rating={getOverallRating(book)} onChange={() => {}} size="text-xl" />
+                            <span className="text-sm text-gray-500 dark:text-gray-400 font-mono">
+                              {getOverallRating(book).toFixed(2)}
+                            </span>
+                            {getDetailedRatings(book) && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => toggleBookExpand(book.id)}
+                                className="p-1 h-auto"
+                              >
+                                {expandedBooks[book.id] ? (
+                                  <ChevronUp className="h-4 w-4" />
+                                ) : (
+                                  <ChevronDown className="h-4 w-4" />
+                                )}
+                              </Button>
                             )}
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-
-                    {expandedBooks[book.id] && getDetailedRatings(book) && (
-                      <div className="mt-4 flex justify-center">
-                        <div className="max-w-2xl w-full">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-3">
-                              {['Story', 'Characters', 'Language'].map((category) => (
-                                <div key={category} className="flex items-center justify-between gap-4">
-                                  <span className="capitalize text-sm text-gray-600 dark:text-gray-300">
-                                    {category}:
-                                  </span>
-                                  <div className="flex items-center gap-2">
-                                    <StarRating 
-                                      rating={Number(book.review?.ratings?.[category]) || 0} 
-                                      onChange={() => {}} 
-                                      size="text-sm" 
-                                    />
-                                    <span className="text-xs text-gray-500 dark:text-gray-400 min-w-[32px]">
-                                      {(Number(book.review?.ratings?.[category]) || 0).toFixed(2)}
-                                    </span>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                            <div className="space-y-3">
-                              {['Pacing', 'Originality'].map((category) => (
-                                <div key={category} className="flex items-center justify-between gap-4">
-                                  <span className="capitalize text-sm text-gray-600 dark:text-gray-300">
-                                    {category}:
-                                  </span>
-                                  <div className="flex items-center gap-2">
-                                    <StarRating 
-                                      rating={Number(book.review?.ratings?.[category]) || 0} 
-                                      onChange={() => {}} 
-                                      size="text-sm" 
-                                    />
-                                    <span className="text-xs text-gray-500 dark:text-gray-400 min-w-[32px]">
-                                      {(Number(book.review?.ratings?.[category]) || 0).toFixed(2)}
-                                    </span>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
                           </div>
                         </div>
-                      </div>
-                    )}
 
-                    {book.review?.text && (
-                      <div className="mt-4">
-                        <div className="text-sm text-gray-600 dark:text-gray-300 mb-1">Review:</div>
-                        <p className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap">
-                          {book.review.text}
-                        </p>
-                      </div>
+                        {expandedBooks[book.id] && getDetailedRatings(book) && (
+                          <div className="mt-4 flex justify-center">
+                            <div className="max-w-2xl w-full">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-3">
+                                  {['Story', 'Characters', 'Language'].map((category) => (
+                                    <div key={category} className="flex items-center justify-between gap-4">
+                                      <span className="capitalize text-sm text-gray-600 dark:text-gray-300">
+                                        {category}:
+                                      </span>
+                                      <div className="flex items-center gap-2">
+                                        <StarRating 
+                                          rating={Number(book.review?.ratings?.[category]) || 0} 
+                                          onChange={() => {}} 
+                                          size="text-sm" 
+                                        />
+                                        <span className="text-xs text-gray-500 dark:text-gray-400 min-w-[32px]">
+                                          {(Number(book.review?.ratings?.[category]) || 0).toFixed(2)}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                                <div className="space-y-3">
+                                  {['Pacing', 'Originality'].map((category) => (
+                                    <div key={category} className="flex items-center justify-between gap-4">
+                                      <span className="capitalize text-sm text-gray-600 dark:text-gray-300">
+                                        {category}:
+                                      </span>
+                                      <div className="flex items-center gap-2">
+                                        <StarRating 
+                                          rating={Number(book.review?.ratings?.[category]) || 0} 
+                                          onChange={() => {}} 
+                                          size="text-sm" 
+                                        />
+                                        <span className="text-xs text-gray-500 dark:text-gray-400 min-w-[32px]">
+                                          {(Number(book.review?.ratings?.[category]) || 0).toFixed(2)}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {book.review?.text && (
+                          <div className="mt-4">
+                            <div className="text-sm text-gray-600 dark:text-gray-300 mb-1">Review:</div>
+                            <p className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap">
+                              {book.review.text}
+                            </p>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>

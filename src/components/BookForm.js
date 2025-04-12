@@ -60,6 +60,10 @@ export default function BookForm({ selectedBook, isEditing = false, existingBook
     return sum / totalCriteria;
   };
 
+  const shouldShowRatings = () => {
+    return status === BOOK_STATUSES.FINISHED;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -68,14 +72,16 @@ export default function BookForm({ selectedBook, isEditing = false, existingBook
       const bookData = {
         ...selectedBook,
         status,
-        ratings: ratingType === 'detailed' ? ratings : null,
-        review: {
-          text: reviewText,
-          ratingType,
-          simpleRating: ratingType === 'simple' ? simpleRating : null,
+        ...(shouldShowRatings() && {
           ratings: ratingType === 'detailed' ? ratings : null,
-          overall: ratingType === 'simple' ? simpleRating : calculateOverallRating()
-        }
+          review: {
+            text: reviewText,
+            ratingType,
+            simpleRating: ratingType === 'simple' ? simpleRating : null,
+            ratings: ratingType === 'detailed' ? ratings : null,
+            overall: ratingType === 'simple' ? simpleRating : calculateOverallRating()
+          }
+        })
       };
 
       if (isEditing) {
@@ -116,107 +122,113 @@ export default function BookForm({ selectedBook, isEditing = false, existingBook
             </select>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
-              Rating Type
-            </label>
-            <div className="flex gap-4">
-              <Button
-                type="button"
-                onClick={() => setRatingType('simple')}
-                className={`flex-1 border transition-colors ${
-                  ratingType === 'simple'
-                    ? 'bg-blue-500 hover:bg-blue-600 text-white border-transparent'
-                    : 'bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700'
-                }`}
-              >
-                Simple
-              </Button>
-              <Button
-                type="button"
-                onClick={() => setRatingType('detailed')}
-                className={`flex-1 border transition-colors ${
-                  ratingType === 'detailed'
-                    ? 'bg-blue-500 hover:bg-blue-600 text-white border-transparent'
-                    : 'bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700'
-                }`}
-              >
-                Detailed
-              </Button>
-            </div>
-          </div>
-
-          {ratingType === 'simple' && (
-            <div className="flex flex-col items-center space-y-4">
-              <h4 className="text-2xl font-medium dark:text-gray-200">Overall Rating</h4>
-              <div className="flex flex-col sm:flex-row items-center gap-2">
-                <StarRating
-                  rating={simpleRating || 0}
-                  onChange={handleSimpleRating}
-                  size="text-5xl sm:text-6xl"
-                  ariaLabel="Overall rating"
-                />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleClearRating('simple')}
-                  className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 h-8 px-2"
-                >
-                  Clear
-                </Button>
+          {shouldShowRatings() && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                  Rating Type
+                </label>
+                <div className="flex gap-4">
+                  <Button
+                    type="button"
+                    onClick={() => setRatingType('simple')}
+                    className={`flex-1 border transition-colors ${
+                      ratingType === 'simple'
+                        ? 'bg-blue-500 hover:bg-blue-600 text-white border-transparent'
+                        : 'bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700'
+                    }`}
+                  >
+                    Simple
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => setRatingType('detailed')}
+                    className={`flex-1 border transition-colors ${
+                      ratingType === 'detailed'
+                        ? 'bg-blue-500 hover:bg-blue-600 text-white border-transparent'
+                        : 'bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700'
+                    }`}
+                  >
+                    Detailed
+                  </Button>
+                </div>
               </div>
-              <p className="text-lg text-gray-600 dark:text-gray-400">
-                {simpleRating || 0} out of 5 stars
-              </p>
-            </div>
-          )}
 
-          {ratingType === 'detailed' && (
-            <div className="space-y-6 max-w-xl mx-auto">
-              <h4 className="text-2xl font-medium dark:text-gray-200 mb-6 text-center">Rate Different Aspects</h4>
-              {criteriaList.map((criterion) => (
-                <div key={criterion} className="flex flex-col items-center gap-3">
-                  <label className="text-lg font-medium text-gray-700 dark:text-gray-300">
-                    {criterion}
-                  </label>
+              {ratingType === 'simple' && (
+                <div className="flex flex-col items-center space-y-4">
+                  <h4 className="text-2xl font-medium dark:text-gray-200">Overall Rating</h4>
                   <div className="flex flex-col sm:flex-row items-center gap-2">
-                    <div className="flex items-center gap-2">
-                      <StarRating
-                        rating={ratings[criterion] || 0}
-                        onChange={(value) => handleDetailedRating(criterion, value)}
-                        size="text-4xl sm:text-5xl"
-                        ariaLabel={`Rate ${criterion}`}
-                      />
-                      <span className="text-sm sm:text-lg text-gray-500 dark:text-gray-400 min-w-[3rem]">
-                        {ratings[criterion] || 0}/5
-                      </span>
-                    </div>
+                    <StarRating
+                      rating={simpleRating || 0}
+                      onChange={handleSimpleRating}
+                      size="text-5xl sm:text-6xl"
+                      ariaLabel="Overall rating"
+                    />
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleClearRating(criterion)}
+                      onClick={() => handleClearRating('simple')}
                       className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 h-8 px-2"
                     >
                       Clear
                     </Button>
                   </div>
+                  <p className="text-lg text-gray-600 dark:text-gray-400">
+                    {simpleRating || 0} out of 5 stars
+                  </p>
                 </div>
-              ))}
-            </div>
+              )}
+
+              {ratingType === 'detailed' && (
+                <div className="space-y-6 max-w-xl mx-auto">
+                  <h4 className="text-2xl font-medium dark:text-gray-200 mb-6 text-center">Rate Different Aspects</h4>
+                  {criteriaList.map((criterion) => (
+                    <div key={criterion} className="flex flex-col items-center gap-3">
+                      <label className="text-lg font-medium text-gray-700 dark:text-gray-300">
+                        {criterion}
+                      </label>
+                      <div className="flex flex-col sm:flex-row items-center gap-2">
+                        <div className="flex items-center gap-2">
+                          <StarRating
+                            rating={ratings[criterion] || 0}
+                            onChange={(value) => handleDetailedRating(criterion, value)}
+                            size="text-4xl sm:text-5xl"
+                            ariaLabel={`Rate ${criterion}`}
+                          />
+                          <span className="text-sm sm:text-lg text-gray-500 dark:text-gray-400 min-w-[3rem]">
+                            {ratings[criterion] || 0}/5
+                          </span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleClearRating(criterion)}
+                          className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 h-8 px-2"
+                        >
+                          Clear
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
           )}
 
-          <div className="pt-8">
-            <label className="block text-lg font-medium text-gray-700 dark:text-gray-300 mb-3">
-              Your Review
-            </label>
-            <Textarea
-              placeholder="Write your thoughts about the book..."
-              value={reviewText}
-              onChange={(e) => setReviewText(e.target.value)}
-              rows={6}
-              className="w-full text-base dark:bg-gray-700 dark:text-gray-200"
-            />
-          </div>
+          {shouldShowRatings() && (
+            <div className="pt-8">
+              <label className="block text-lg font-medium text-gray-700 dark:text-gray-300 mb-3">
+                Your Review
+              </label>
+              <Textarea
+                placeholder="Write your thoughts about the book..."
+                value={reviewText}
+                onChange={(e) => setReviewText(e.target.value)}
+                rows={6}
+                className="w-full text-base dark:bg-gray-700 dark:text-gray-200"
+              />
+            </div>
+          )}
         </div>
       </div>
 
