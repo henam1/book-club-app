@@ -141,7 +141,7 @@ export default function BooksPage() {
         <h1 className="text-2xl font-semibold dark:text-gray-100">My Books</h1>
         <Link 
           href="/books/add"
-          className="w-full sm:w-auto bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 transition text-center"
+          className="w-full sm:w-auto bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 transition text-center border-0"
         >
           Add Book
         </Link>
@@ -149,36 +149,29 @@ export default function BooksPage() {
 
       <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
         <div className="relative">
-          {isScrollable && (
-            <>
-              <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-gray-900 to-transparent pointer-events-none z-10" />
-              <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-gray-900 to-transparent pointer-events-none z-10" />
-            </>
-          )}
-          
           <div className="overflow-x-auto scrollbar-none -mx-4 px-4 tabs-scroll-container">
-            <TabsList className="inline-flex w-max min-w-full border-b border-gray-700">
+            <TabsList className="inline-flex w-max min-w-full bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
               <TabsTrigger 
                 value="all" 
-                className="px-6 py-2 whitespace-nowrap text-sm font-medium"
+                className="px-6 py-2 whitespace-nowrap text-sm font-medium rounded-md data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-none"
               >
                 All Books
               </TabsTrigger>
               <TabsTrigger 
                 value={BOOK_STATUSES.WANT_TO_READ}
-                className="px-6 py-2 whitespace-nowrap text-sm font-medium"
+                className="px-6 py-2 whitespace-nowrap text-sm font-medium rounded-md data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-none"
               >
                 Want to Read
               </TabsTrigger>
               <TabsTrigger 
                 value={BOOK_STATUSES.READING}
-                className="px-6 py-2 whitespace-nowrap text-sm font-medium"
+                className="px-6 py-2 whitespace-nowrap text-sm font-medium rounded-md data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-none"
               >
                 Currently Reading
               </TabsTrigger>
               <TabsTrigger 
                 value={BOOK_STATUSES.FINISHED}
-                className="px-6 py-2 whitespace-nowrap text-sm font-medium"
+                className="px-6 py-2 whitespace-nowrap text-sm font-medium rounded-md data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-none"
               >
                 Finished
               </TabsTrigger>
@@ -188,7 +181,10 @@ export default function BooksPage() {
 
         <div className="space-y-4">
           {currentBooks.map((book) => (
-            <Card key={book.id} className="dark:bg-gray-800">
+            <Card 
+              key={book.id} 
+              className="border border-gray-200 dark:border-gray-700 dark:bg-gray-800 bg-white shadow-none"
+            >
               <CardContent className="p-4">
                 <div className="flex flex-col sm:flex-row gap-4">
                   {book.thumbnail && (
@@ -197,7 +193,7 @@ export default function BooksPage() {
                         src={book.thumbnail}
                         alt={book.title}
                         fill
-                        className="object-cover rounded-md shadow-sm"
+                        className="object-cover rounded-md border border-gray-200 dark:border-gray-700"
                         sizes="(max-width: 768px) 96px, 96px"
                       />
                     </div>
@@ -215,7 +211,7 @@ export default function BooksPage() {
                         <select
                           value={book.status}
                           onChange={(e) => handleStatusChange(book.id, e.target.value)}
-                          className="w-full sm:w-auto bg-white dark:bg-gray-700 border rounded-md px-2 py-1 text-sm"
+                          className="w-full sm:w-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md px-3 py-1.5 text-sm text-gray-900 dark:text-gray-100"
                         >
                           <option value={BOOK_STATUSES.WANT_TO_READ}>Want to Read</option>
                           <option value={BOOK_STATUSES.READING}>Currently Reading</option>
@@ -225,7 +221,7 @@ export default function BooksPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="flex-1 sm:flex-none dark:text-gray-200 dark:hover:bg-gray-700"
+                            className="flex-1 sm:flex-none dark:text-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 shadow-none"
                             onClick={() => handleEdit(book.id)}
                           >
                             Edit
@@ -233,7 +229,7 @@ export default function BooksPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="flex-1 sm:flex-none text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-gray-700"
+                            className="flex-1 sm:flex-none text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 shadow-none"
                             onClick={() => handleDelete(book.id)}
                           >
                             Delete
@@ -337,7 +333,11 @@ export default function BooksPage() {
                 variant={pageNum === currentPage ? "default" : "outline"}
                 size="sm"
                 onClick={() => handlePageChange(pageNum)}
-                className="min-w-[40px]"
+                className={`min-w-[40px] shadow-none border ${
+                  pageNum === currentPage 
+                    ? 'bg-blue-500 text-white border-0' 
+                    : 'border-gray-200 dark:border-gray-700'
+                }`}
               >
                 {pageNum}
               </Button>

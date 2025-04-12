@@ -4,8 +4,6 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import StarRating from "./StarRating";
 import { saveBook, updateBook } from "../../firebase";
 
@@ -62,7 +60,8 @@ export default function BookForm({ selectedBook, isEditing = false, existingBook
     return sum / totalCriteria;
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     try {
       setIsSubmitting(true);
 
@@ -94,93 +93,117 @@ export default function BookForm({ selectedBook, isEditing = false, existingBook
     }
   };
 
+  const onCancel = () => {
+    router.push('/books');
+  };
+
   return (
-    <Card className="dark:bg-gray-800">
-      <CardContent className="p-8">
-        <div className="space-y-8">
-          <div className="space-y-4">
-            <h4 className="text-lg font-medium dark:text-gray-200">Reading Status</h4>
-            <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={BOOK_STATUSES.WANT_TO_READ}>Want to Read</SelectItem>
-                <SelectItem value={BOOK_STATUSES.READING}>Currently Reading</SelectItem>
-                <SelectItem value={BOOK_STATUSES.FINISHED}>Finished</SelectItem>
-              </SelectContent>
-            </Select>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-none">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+              Status
+            </label>
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              className="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md px-3 py-1.5 text-sm text-gray-900 dark:text-gray-100"
+            >
+              <option value={BOOK_STATUSES.WANT_TO_READ}>Want to Read</option>
+              <option value={BOOK_STATUSES.READING}>Currently Reading</option>
+              <option value={BOOK_STATUSES.FINISHED}>Finished</option>
+            </select>
           </div>
 
-          <Tabs defaultValue="simple" value={ratingType} onValueChange={setRatingType}>
-            <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto dark:bg-gray-700">
-              <TabsTrigger value="simple" className="dark:text-gray-200 dark:data-[state=active]:bg-gray-800">
-                Simple Rating
-              </TabsTrigger>
-              <TabsTrigger value="detailed" className="dark:text-gray-200 dark.data-[state=active]:bg-gray-800">
-                Detailed Rating
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="simple" className="pt-8">
-              <div className="flex flex-col items-center space-y-4">
-                <h4 className="text-2xl font-medium dark:text-gray-200">Overall Rating</h4>
-                <div className="flex flex-col sm:flex-row items-center gap-2">
-                  <StarRating
-                    rating={simpleRating || 0}
-                    onChange={handleSimpleRating}
-                    size="text-5xl sm:text-6xl"
-                    ariaLabel="Overall rating"
-                  />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleClearRating('simple')}
-                    className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 h-8 px-2"
-                  >
-                    Clear
-                  </Button>
-                </div>
-                <p className="text-lg text-gray-600 dark:text-gray-400">
-                  {simpleRating || 0} out of 5 stars
-                </p>
-              </div>
-            </TabsContent>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+              Rating Type
+            </label>
+            <div className="flex gap-4">
+              <Button
+                type="button"
+                onClick={() => setRatingType('simple')}
+                className={`flex-1 border transition-colors ${
+                  ratingType === 'simple'
+                    ? 'bg-blue-500 hover:bg-blue-600 text-white border-transparent'
+                    : 'bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700'
+                }`}
+              >
+                Simple
+              </Button>
+              <Button
+                type="button"
+                onClick={() => setRatingType('detailed')}
+                className={`flex-1 border transition-colors ${
+                  ratingType === 'detailed'
+                    ? 'bg-blue-500 hover:bg-blue-600 text-white border-transparent'
+                    : 'bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700'
+                }`}
+              >
+                Detailed
+              </Button>
+            </div>
+          </div>
 
-            <TabsContent value="detailed" className="pt-8">
-              <div className="space-y-6 max-w-xl mx-auto">
-                <h4 className="text-2xl font-medium dark:text-gray-200 mb-6 text-center">Rate Different Aspects</h4>
-                {criteriaList.map((criterion) => (
-                  <div key={criterion} className="flex flex-col items-center gap-3">
-                    <label className="text-lg font-medium text-gray-700 dark:text-gray-300">
-                      {criterion}
-                    </label>
-                    <div className="flex flex-col sm:flex-row items-center gap-2">
-                      <div className="flex items-center gap-2">
-                        <StarRating
-                          rating={ratings[criterion] || 0}
-                          onChange={(value) => handleDetailedRating(criterion, value)}
-                          size="text-4xl sm:text-5xl"
-                          ariaLabel={`Rate ${criterion}`}
-                        />
-                        <span className="text-sm sm:text-lg text-gray-500 dark:text-gray-400 min-w-[3rem]">
-                          {ratings[criterion] || 0}/5
-                        </span>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleClearRating(criterion)}
-                        className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 h-8 px-2"
-                      >
-                        Clear
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+          {ratingType === 'simple' && (
+            <div className="flex flex-col items-center space-y-4">
+              <h4 className="text-2xl font-medium dark:text-gray-200">Overall Rating</h4>
+              <div className="flex flex-col sm:flex-row items-center gap-2">
+                <StarRating
+                  rating={simpleRating || 0}
+                  onChange={handleSimpleRating}
+                  size="text-5xl sm:text-6xl"
+                  ariaLabel="Overall rating"
+                />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleClearRating('simple')}
+                  className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 h-8 px-2"
+                >
+                  Clear
+                </Button>
               </div>
-            </TabsContent>
-          </Tabs>
+              <p className="text-lg text-gray-600 dark:text-gray-400">
+                {simpleRating || 0} out of 5 stars
+              </p>
+            </div>
+          )}
+
+          {ratingType === 'detailed' && (
+            <div className="space-y-6 max-w-xl mx-auto">
+              <h4 className="text-2xl font-medium dark:text-gray-200 mb-6 text-center">Rate Different Aspects</h4>
+              {criteriaList.map((criterion) => (
+                <div key={criterion} className="flex flex-col items-center gap-3">
+                  <label className="text-lg font-medium text-gray-700 dark:text-gray-300">
+                    {criterion}
+                  </label>
+                  <div className="flex flex-col sm:flex-row items-center gap-2">
+                    <div className="flex items-center gap-2">
+                      <StarRating
+                        rating={ratings[criterion] || 0}
+                        onChange={(value) => handleDetailedRating(criterion, value)}
+                        size="text-4xl sm:text-5xl"
+                        ariaLabel={`Rate ${criterion}`}
+                      />
+                      <span className="text-sm sm:text-lg text-gray-500 dark:text-gray-400 min-w-[3rem]">
+                        {ratings[criterion] || 0}/5
+                      </span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleClearRating(criterion)}
+                      className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 h-8 px-2"
+                    >
+                      Clear
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
           <div className="pt-8">
             <label className="block text-lg font-medium text-gray-700 dark:text-gray-300 mb-3">
@@ -194,16 +217,25 @@ export default function BookForm({ selectedBook, isEditing = false, existingBook
               className="w-full text-base dark:bg-gray-700 dark:text-gray-200"
             />
           </div>
-
-          <Button
-            onClick={handleSubmit}
-            className="w-full max-w-md mx-auto block bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white mt-8 py-2.5"
-            disabled={isSubmitting}
-          >
-            {isEditing ? 'Update Book' : 'Add Book'}
-          </Button>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+
+      <div className="flex justify-end gap-4">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onCancel}
+          className="border border-gray-200 dark:border-gray-700 shadow-none dark:text-gray-200 dark:hover:bg-gray-700"
+        >
+          Cancel
+        </Button>
+        <Button
+          type="submit"
+          className="bg-blue-500 text-white border-0 shadow-none hover:bg-blue-600 dark:hover:bg-blue-700"
+        >
+          {isEditing ? 'Update Book' : 'Add Book'}
+        </Button>
+      </div>
+    </form>
   );
 }

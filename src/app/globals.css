@@ -119,6 +119,10 @@
   body {
     @apply bg-background text-foreground;
   }
+  :root {
+    --ring-offset-shadow: 0 0 #000;
+    --ring-shadow: 0 0 #000;
+  }
 }
 
 @layer utilities {
@@ -129,5 +133,22 @@
   
   .scrollbar-none::-webkit-scrollbar {
     display: none;  /* Chrome, Safari and Opera */
+  }
+}
+
+@layer components {
+  .tabs-trigger[data-state='active'] {
+    box-shadow: none !important;
+  }
+  .btn-flat {
+    @apply shadow-none border border-gray-200 dark:border-gray-700;
+  }
+  
+  .btn-primary {
+    @apply bg-blue-500 hover:bg-blue-600 text-white border-0;
+  }
+  
+  .btn-outline {
+    @apply bg-transparent hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700;
   }
 }
