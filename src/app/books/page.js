@@ -23,6 +23,8 @@ export default function BooksPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
   const [expandedBooks, setExpandedBooks] = useState({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const booksPerPage = 10; // Adjust this value as needed
   const router = useRouter();
 
   useEffect(() => {
@@ -104,142 +106,191 @@ export default function BooksPage() {
     ? books 
     : books.filter(book => book.status === activeTab);
 
+  // Pagination logic
+  const indexOfLastBook = currentPage * booksPerPage;
+  const indexOfFirstBook = indexOfLastBook - booksPerPage;
+  const currentBooks = filteredBooks.slice(indexOfFirstBook, indexOfLastBook);
+  const totalPages = Math.ceil(filteredBooks.length / booksPerPage);
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+    window.scrollTo(0, 0);
+  };
+
   if (isLoading) {
     return <div className="text-center">Loading...</div>;
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
+    <div className="max-w-4xl mx-auto px-4 py-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <h1 className="text-2xl font-semibold dark:text-gray-100">My Books</h1>
         <Link 
           href="/books/add"
-          className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 transition"
+          className="w-full sm:w-auto bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 transition text-center"
         >
           Add Book
         </Link>
       </div>
 
       <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4 mb-8">
-          <TabsTrigger value="all">All Books</TabsTrigger>
-          <TabsTrigger value={BOOK_STATUSES.WANT_TO_READ}>Want to Read</TabsTrigger>
-          <TabsTrigger value={BOOK_STATUSES.READING}>Currently Reading</TabsTrigger>
-          <TabsTrigger value={BOOK_STATUSES.FINISHED}>Finished</TabsTrigger>
-        </TabsList>
+        <div className="relative">
+          {/* Add fade indicators */}
+          <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-gray-900 to-transparent pointer-events-none z-10" />
+          <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-gray-900 to-transparent pointer-events-none z-10" />
+          
+          <div className="overflow-x-auto scrollbar-none -mx-4 px-4">
+            <TabsList className="inline-flex w-max min-w-full border-b border-gray-700">
+              <TabsTrigger 
+                value="all" 
+                className="px-6 py-2 whitespace-nowrap text-sm font-medium"
+              >
+                All Books
+              </TabsTrigger>
+              <TabsTrigger 
+                value={BOOK_STATUSES.WANT_TO_READ}
+                className="px-6 py-2 whitespace-nowrap text-sm font-medium"
+              >
+                Want to Read
+              </TabsTrigger>
+              <TabsTrigger 
+                value={BOOK_STATUSES.READING}
+                className="px-6 py-2 whitespace-nowrap text-sm font-medium"
+              >
+                Currently Reading
+              </TabsTrigger>
+              <TabsTrigger 
+                value={BOOK_STATUSES.FINISHED}
+                className="px-6 py-2 whitespace-nowrap text-sm font-medium"
+              >
+                Finished
+              </TabsTrigger>
+            </TabsList>
+          </div>
+        </div>
 
         <div className="space-y-4">
-          {filteredBooks.map((book) => (
+          {currentBooks.map((book) => (
             <Card key={book.id} className="dark:bg-gray-800">
               <CardContent className="p-4">
-                <div className="flex gap-4">
+                <div className="flex flex-col sm:flex-row gap-4">
                   {book.thumbnail && (
-                    <div className="relative w-24 h-36">
+                    <div className="relative w-24 h-36 mx-auto sm:mx-0">
                       <Image
                         src={book.thumbnail}
                         alt={book.title}
                         fill
                         className="object-cover rounded-md shadow-sm"
-                        sizes="96px"
+                        sizes="(max-width: 768px) 96px, 96px"
                       />
                     </div>
                   )}
                   <div className="flex-1">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h2 className="text-xl font-semibold dark:text-gray-100">{book.title}</h2>
-                        <div className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                    <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+                      <div className="w-full sm:w-auto">
+                        <h2 className="text-xl font-semibold dark:text-gray-100 text-center sm:text-left">{book.title}</h2>
+                        <div className="text-sm text-gray-600 dark:text-gray-300 mb-2 text-center sm:text-left">
                           {book.authors && <div><strong className="dark:text-gray-200">Author:</strong> {book.authors}</div>}
                           {book.publishedDate && <div><strong className="dark:text-gray-200">Published:</strong> {book.publishedDate}</div>}
                         </div>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                         <select
                           value={book.status}
                           onChange={(e) => handleStatusChange(book.id, e.target.value)}
-                          className="bg-white dark:bg-gray-700 border rounded-md px-2 py-1 text-sm"
+                          className="w-full sm:w-auto bg-white dark:bg-gray-700 border rounded-md px-2 py-1 text-sm"
                         >
                           <option value={BOOK_STATUSES.WANT_TO_READ}>Want to Read</option>
                           <option value={BOOK_STATUSES.READING}>Currently Reading</option>
                           <option value={BOOK_STATUSES.FINISHED}>Finished</option>
                         </select>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="dark:text-gray-200 dark:hover:bg-gray-700"
-                          onClick={() => handleEdit(book.id)}
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-gray-700"
-                          onClick={() => handleDelete(book.id)}
-                        >
-                          Delete
-                        </Button>
+                        <div className="flex gap-2 w-full sm:w-auto justify-center sm:justify-start">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1 sm:flex-none dark:text-gray-200 dark:hover:bg-gray-700"
+                            onClick={() => handleEdit(book.id)}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1 sm:flex-none text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-gray-700"
+                            onClick={() => handleDelete(book.id)}
+                          >
+                            Delete
+                          </Button>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center space-x-2 dark:text-gray-200 mt-2">
+                    <div className="flex flex-col sm:flex-row items-center gap-2 dark:text-gray-200 mt-4">
                       <span>Overall Rating:</span>
-                      <StarRating rating={getOverallRating(book)} onChange={() => {}} size="text-xl" />
-                      <span className="text-sm text-gray-500 dark:text-gray-400 font-mono">
-                        {getOverallRating(book).toFixed(2)}
-                      </span>
-                      {getDetailedRatings(book) && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => toggleBookExpand(book.id)}
-                          className="ml-2 p-1 h-auto"
-                        >
-                          {expandedBooks[book.id] ? (
-                            <ChevronUp className="h-4 w-4" />
-                          ) : (
-                            <ChevronDown className="h-4 w-4" />
-                          )}
-                        </Button>
-                      )}
+                      <div className="flex items-center gap-2">
+                        <StarRating rating={getOverallRating(book)} onChange={() => {}} size="text-xl" />
+                        <span className="text-sm text-gray-500 dark:text-gray-400 font-mono">
+                          {getOverallRating(book).toFixed(2)}
+                        </span>
+                        {getDetailedRatings(book) && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleBookExpand(book.id)}
+                            className="p-1 h-auto"
+                          >
+                            {expandedBooks[book.id] ? (
+                              <ChevronUp className="h-4 w-4" />
+                            ) : (
+                              <ChevronDown className="h-4 w-4" />
+                            )}
+                          </Button>
+                        )}
+                      </div>
                     </div>
 
                     {expandedBooks[book.id] && getDetailedRatings(book) && (
-                      <div className="mt-2 space-y-1 text-sm text-gray-600 dark:text-gray-300">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            {['Story', 'Characters', 'Language'].map((category) => (
-                              <div key={category} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
-                                <span className="capitalize min-w-[100px]">{category}:</span>
-                                <div className="flex items-center gap-2">
-                                  <StarRating 
-                                    rating={Number(book.review?.ratings?.[category]) || 0} 
-                                    onChange={() => {}} 
-                                    size="text-sm" 
-                                  />
-                                  <span className="ml-2 text-xs min-w-[32px]">
-                                    {(Number(book.review?.ratings?.[category]) || 0).toFixed(2)}
+                      <div className="mt-4 flex justify-center">
+                        <div className="max-w-2xl w-full">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-3">
+                              {['Story', 'Characters', 'Language'].map((category) => (
+                                <div key={category} className="flex items-center justify-between gap-4">
+                                  <span className="capitalize text-sm text-gray-600 dark:text-gray-300">
+                                    {category}:
                                   </span>
+                                  <div className="flex items-center gap-2">
+                                    <StarRating 
+                                      rating={Number(book.review?.ratings?.[category]) || 0} 
+                                      onChange={() => {}} 
+                                      size="text-sm" 
+                                    />
+                                    <span className="text-xs text-gray-500 dark:text-gray-400 min-w-[32px]">
+                                      {(Number(book.review?.ratings?.[category]) || 0).toFixed(2)}
+                                    </span>
+                                  </div>
                                 </div>
-                              </div>
-                            ))}
-                          </div>
-                          <div className="space-y-2">
-                            {['Pacing', 'Originality'].map((category) => (
-                              <div key={category} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
-                                <span className="capitalize min-w-[100px]">{category}:</span>
-                                <div className="flex items-center gap-2">
-                                  <StarRating 
-                                    rating={Number(book.review?.ratings?.[category]) || 0} 
-                                    onChange={() => {}} 
-                                    size="text-sm" 
-                                  />
-                                  <span className="ml-2 text-xs min-w-[32px]">
-                                    {(Number(book.review?.ratings?.[category]) || 0).toFixed(2)}
+                              ))}
+                            </div>
+                            <div className="space-y-3">
+                              {['Pacing', 'Originality'].map((category) => (
+                                <div key={category} className="flex items-center justify-between gap-4">
+                                  <span className="capitalize text-sm text-gray-600 dark:text-gray-300">
+                                    {category}:
                                   </span>
+                                  <div className="flex items-center gap-2">
+                                    <StarRating 
+                                      rating={Number(book.review?.ratings?.[category]) || 0} 
+                                      onChange={() => {}} 
+                                      size="text-sm" 
+                                    />
+                                    <span className="text-xs text-gray-500 dark:text-gray-400 min-w-[32px]">
+                                      {(Number(book.review?.ratings?.[category]) || 0).toFixed(2)}
+                                    </span>
+                                  </div>
                                 </div>
-                              </div>
-                            ))}
+                              ))}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -259,6 +310,23 @@ export default function BooksPage() {
             </Card>
           ))}
         </div>
+
+        {/* Pagination controls */}
+        {totalPages > 1 && (
+          <div className="flex justify-center gap-2 mt-8">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+              <Button
+                key={pageNum}
+                variant={pageNum === currentPage ? "default" : "outline"}
+                size="sm"
+                onClick={() => handlePageChange(pageNum)}
+                className="min-w-[40px]"
+              >
+                {pageNum}
+              </Button>
+            ))}
+          </div>
+        )}
       </Tabs>
     </div>
   );
