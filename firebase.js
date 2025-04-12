@@ -1,6 +1,17 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, addDoc, query, where, getDocs, doc, deleteDoc, updateDoc } from "firebase/firestore";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { 
+  getAuth, 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword, 
+  signOut, 
+  sendPasswordResetEmail,
+  updateEmail,
+  updatePassword,
+  deleteUser,
+  EmailAuthProvider,
+  reauthenticateWithCredential
+} from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -46,6 +57,15 @@ export async function logoutUser() {
     await signOut(auth);
   } catch (error) {
     console.error("Error logging out user:", error);
+    throw error;
+  }
+}
+
+export async function resetPassword(email) {
+  try {
+    await sendPasswordResetEmail(auth, email);
+  } catch (error) {
+    console.error("Error sending password reset email:", error);
     throw error;
   }
 }
@@ -198,6 +218,60 @@ export async function fetchBook(bookId) {
     return { id: bookDoc.id, ...bookDoc.data() };
   } catch (error) {
     console.error("Error fetching book:", error);
+    throw error;
+  }
+}
+
+export const updateUserEmail = async (newEmail) => {
+  try {
+    const user = auth.currentUser;
+    await updateEmail(user, newEmail);
+  } catch (error) {
+    console.error("Error updating email:", error);
+    throw error;
+  }
+};
+
+export const updateUserPassword = async (newPassword) => {
+  try {
+    const user = auth.currentUser;
+    await updatePassword(user, newPassword);
+  } catch (error) {
+    console.error("Error updating password:", error);
+    throw error;
+  }
+};
+
+export const deleteUserAccount = async () => {
+  try {
+    const user = auth.currentUser;
+    
+    // Delete all user's books
+    const booksRef = collection(db, 'books');
+    const q = query(booksRef, where('userId', '==', user.uid));
+    const querySnapshot = await getDocs(q);
+    
+    // Delete each book document
+    const deletePromises = querySnapshot.docs.map(doc => deleteDoc(doc.ref));
+    await Promise.all(deletePromises);
+    
+    // Finally delete the user account
+    await deleteUser(user);
+  } catch (error) {
+    console.error("Error deleting account:", error);
+    throw error;
+  }
+};
+
+export async function reauthenticateUser(password) {
+  const user = auth.currentUser;
+  const credential = EmailAuthProvider.credential(user.email, password);
+  
+  try {
+    await reauthenticateWithCredential(user, credential);
+    return true;
+  } catch (error) {
+    console.error("Reauthentication error:", error);
     throw error;
   }
 }
