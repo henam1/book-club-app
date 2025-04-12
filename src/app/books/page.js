@@ -25,6 +25,7 @@ export default function BooksPage() {
   const [expandedBooks, setExpandedBooks] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
   const booksPerPage = 10; // Adjust this value as needed
+  const [isScrollable, setIsScrollable] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -39,6 +40,19 @@ export default function BooksPage() {
 
     return () => unsubscribe();
   }, [router]);
+
+  useEffect(() => {
+    const checkIfScrollable = () => {
+      const tabsList = document.querySelector('.tabs-scroll-container');
+      if (tabsList) {
+        setIsScrollable(tabsList.scrollWidth > tabsList.clientWidth);
+      }
+    };
+
+    checkIfScrollable();
+    window.addEventListener('resize', checkIfScrollable);
+    return () => window.removeEventListener('resize', checkIfScrollable);
+  }, []);
 
   const loadBooks = async () => {
     try {
@@ -135,11 +149,14 @@ export default function BooksPage() {
 
       <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
         <div className="relative">
-          {/* Add fade indicators */}
-          <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-gray-900 to-transparent pointer-events-none z-10" />
-          <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-gray-900 to-transparent pointer-events-none z-10" />
+          {isScrollable && (
+            <>
+              <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-gray-900 to-transparent pointer-events-none z-10" />
+              <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-gray-900 to-transparent pointer-events-none z-10" />
+            </>
+          )}
           
-          <div className="overflow-x-auto scrollbar-none -mx-4 px-4">
+          <div className="overflow-x-auto scrollbar-none -mx-4 px-4 tabs-scroll-container">
             <TabsList className="inline-flex w-max min-w-full border-b border-gray-700">
               <TabsTrigger 
                 value="all" 
