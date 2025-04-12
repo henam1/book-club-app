@@ -4,10 +4,10 @@ import { useRouter } from "next/navigation";
 import { auth } from "../../../../firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import BookSearch from "@/components/BookSearch";
-import ReviewForm from "@/components/ReviewForm";
+import ReviewForm from "@/components/BookForm";
 import { Button } from "@/components/ui/button";
 
-export default function AddReviewPage() {
+export default function AddBookPage() {
   const router = useRouter();
   const [selectedBook, setSelectedBook] = useState(null);
 
@@ -21,7 +21,7 @@ export default function AddReviewPage() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <h1 className="text-2xl font-semibold mb-8 dark:text-gray-100">Add New Review</h1>
+      <h1 className="text-2xl font-semibold mb-8 dark:text-gray-100">Add New Book</h1>
       {!selectedBook ? (
         <div className="w-full">
           <BookSearch onSelectBook={setSelectedBook} />

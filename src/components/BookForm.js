@@ -5,27 +5,34 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import StarRating from "./StarRating";
-import { saveBookReview, updateReview } from "../../firebase";
+import { saveBook, updateBook } from "../../firebase";
 
 const criteriaList = ["Story", "Language", "Characters", "Pacing", "Originality"];
+const BOOK_STATUSES = {
+  WANT_TO_READ: 'want-to-read',
+  READING: 'reading',
+  FINISHED: 'finished'
+};
 
-export default function ReviewForm({ selectedBook, isEditing = false, existingReview = null }) {
+export default function BookForm({ selectedBook, isEditing = false, existingBook = null }) {
   const router = useRouter();
   const [ratings, setRatings] = useState({});
   const [simpleRating, setSimpleRating] = useState(null);
   const [reviewText, setReviewText] = useState("");
-  const [ratingType, setRatingType] = useState("simple"); // "simple" or "detailed"
+  const [ratingType, setRatingType] = useState("simple");
+  const [status, setStatus] = useState(BOOK_STATUSES.WANT_TO_READ);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Load existing review data if editing
   useEffect(() => {
-    if (isEditing && existingReview) {
-      setRatings(existingReview.ratings || {});
-      setSimpleRating(existingReview.simpleRating || null);
-      setReviewText(existingReview.review || "");
+    if (isEditing && existingBook) {
+      setRatings(existingBook.ratings || {});
+      setSimpleRating(existingBook.simpleRating || null);
+      setReviewText(existingBook.review?.text || "");
+      setStatus(existingBook.status || BOOK_STATUSES.WANT_TO_READ);
     }
-  }, [isEditing, existingReview]);
+  }, [isEditing, existingBook]);
 
   const handleDetailedRating = (criterion, value) => {
     setRatings({ ...ratings, [criterion]: value });
@@ -39,7 +46,6 @@ export default function ReviewForm({ selectedBook, isEditing = false, existingRe
     setRatingType("simple");
   };
 
-  // Add new handler for clearing ratings
   const handleClearRating = (criterion) => {
     if (ratingType === 'simple') {
       setSimpleRating(0);
@@ -49,15 +55,10 @@ export default function ReviewForm({ selectedBook, isEditing = false, existingRe
   };
 
   const calculateOverallRating = () => {
-    // Get all criteria that should be rated
     const totalCriteria = criteriaList.length;
-    
-    // Sum all existing ratings (including 0s)
     const sum = criteriaList.reduce((acc, criterion) => {
       return acc + (ratings[criterion] || 0);
     }, 0);
-  
-    // Divide by total number of criteria
     return sum / totalCriteria;
   };
 
@@ -65,24 +66,29 @@ export default function ReviewForm({ selectedBook, isEditing = false, existingRe
     try {
       setIsSubmitting(true);
 
-      const reviewData = {
+      const bookData = {
         ...selectedBook,
-        overall: ratingType === 'simple' ? simpleRating : calculateOverallRating(),
+        status,
         ratings: ratingType === 'detailed' ? ratings : null,
-        review: reviewText,
-        ratingType
+        review: {
+          text: reviewText,
+          ratingType,
+          simpleRating: ratingType === 'simple' ? simpleRating : null,
+          ratings: ratingType === 'detailed' ? ratings : null,
+          overall: ratingType === 'simple' ? simpleRating : calculateOverallRating()
+        }
       };
 
       if (isEditing) {
-        await updateReview(selectedBook.id, reviewData);
+        await updateBook(selectedBook.id, bookData);
       } else {
-        await saveBookReview(reviewData);
+        await saveBook(bookData);
       }
 
-      router.push('/reviews');
+      router.push('/books');
     } catch (error) {
-      console.error('Error submitting review:', error);
-      alert(error.message || 'Failed to submit review');
+      console.error('Error submitting:', error);
+      alert(error.message || 'Failed to submit');
     } finally {
       setIsSubmitting(false);
     }
@@ -92,17 +98,30 @@ export default function ReviewForm({ selectedBook, isEditing = false, existingRe
     <Card className="dark:bg-gray-800">
       <CardContent className="p-8">
         <div className="space-y-8">
+          <div className="space-y-4">
+            <h4 className="text-lg font-medium dark:text-gray-200">Reading Status</h4>
+            <Select value={status} onValueChange={setStatus}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={BOOK_STATUSES.WANT_TO_READ}>Want to Read</SelectItem>
+                <SelectItem value={BOOK_STATUSES.READING}>Currently Reading</SelectItem>
+                <SelectItem value={BOOK_STATUSES.FINISHED}>Finished</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <Tabs defaultValue="simple" value={ratingType} onValueChange={setRatingType}>
             <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto dark:bg-gray-700">
               <TabsTrigger value="simple" className="dark:text-gray-200 dark:data-[state=active]:bg-gray-800">
                 Simple Rating
               </TabsTrigger>
-              <TabsTrigger value="detailed" className="dark:text-gray-200 dark:data-[state=active]:bg-gray-800">
+              <TabsTrigger value="detailed" className="dark:text-gray-200 dark.data-[state=active]:bg-gray-800">
                 Detailed Rating
               </TabsTrigger>
             </TabsList>
             
-            {/* Simple Rating section */}
             <TabsContent value="simple" className="pt-8">
               <div className="flex flex-col items-center space-y-4">
                 <h4 className="text-2xl font-medium dark:text-gray-200">Overall Rating</h4>
@@ -110,7 +129,7 @@ export default function ReviewForm({ selectedBook, isEditing = false, existingRe
                   <StarRating
                     rating={simpleRating || 0}
                     onChange={handleSimpleRating}
-                    size="text-5xl sm:text-6xl"  // Increased from text-4xl sm:text-5xl
+                    size="text-5xl sm:text-6xl"
                     ariaLabel="Overall rating"
                   />
                   <Button
@@ -128,7 +147,6 @@ export default function ReviewForm({ selectedBook, isEditing = false, existingRe
               </div>
             </TabsContent>
 
-            {/* Detailed Rating section */}
             <TabsContent value="detailed" className="pt-8">
               <div className="space-y-6 max-w-xl mx-auto">
                 <h4 className="text-2xl font-medium dark:text-gray-200 mb-6 text-center">Rate Different Aspects</h4>
@@ -142,7 +160,7 @@ export default function ReviewForm({ selectedBook, isEditing = false, existingRe
                         <StarRating
                           rating={ratings[criterion] || 0}
                           onChange={(value) => handleDetailedRating(criterion, value)}
-                          size="text-4xl sm:text-5xl"  // Increased from text-3xl sm:text-4xl
+                          size="text-4xl sm:text-5xl"
                           ariaLabel={`Rate ${criterion}`}
                         />
                         <span className="text-sm sm:text-lg text-gray-500 dark:text-gray-400 min-w-[3rem]">
@@ -182,7 +200,7 @@ export default function ReviewForm({ selectedBook, isEditing = false, existingRe
             className="w-full max-w-md mx-auto block bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white mt-8 py-2.5"
             disabled={isSubmitting}
           >
-            {isEditing ? 'Update Review' : 'Submit Review'}
+            {isEditing ? 'Update Book' : 'Add Book'}
           </Button>
         </div>
       </CardContent>

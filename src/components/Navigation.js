@@ -35,12 +35,12 @@ export default function Navigation() {
             {isLoggedIn && (
               <>
                 <Link 
-                  href="/reviews"
+                  href="/books"
                   className={`inline-flex items-center px-1 pt-1 border-b-2 ${
-                    pathname.startsWith("/reviews") ? "border-blue-500" : "border-transparent"
+                    pathname.startsWith("/books") ? "border-blue-500" : "border-transparent"
                   }`}
                 >
-                  My Reviews
+                  My Books
                 </Link>
                 <Link 
                   href="/profile"

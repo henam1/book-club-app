@@ -1,46 +1,45 @@
 "use client";
 import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
-import { auth, fetchReview } from "../../../../../firebase";
+import { auth, fetchBook } from "../../../../../firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import ReviewForm from "@/components/ReviewForm";
+import BookForm from "@/components/BookForm";
 
-export default function EditReviewPage({ params }) {
+export default function EditBookPage({ params }) {
   const router = useRouter();
-  const [review, setReview] = useState(null);
+  const [book, setBook] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  
-  // Use React.use() to unwrap params
-  const { id } = use(params);
+  const resolvedParams = use(params);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
-        console.log("User not authenticated, redirecting...");
         router.push("/auth");
         return;
       }
 
       try {
-        setIsLoading(true);
-        setError(null);
-        const reviewData = await fetchReview(id);
-        setReview(reviewData);
+        const bookData = await fetchBook(resolvedParams.id);
+        if (!bookData) {
+          setError("Book not found");
+          setTimeout(() => router.push("/books"), 2000);
+          return;
+        }
+        setBook(bookData);
       } catch (error) {
-        console.error("Failed to fetch review:", error);
+        console.error("Error fetching book:", error);
         setError(error.message);
-        setTimeout(() => router.push("/reviews"), 2000);
       } finally {
         setIsLoading(false);
       }
     });
 
     return () => unsubscribe();
-  }, [id, router]);
+  }, [resolvedParams.id, router]);
 
   if (isLoading) {
-    return <div className="text-center p-4">Loading review...</div>;
+    return <div className="text-center p-4">Loading book...</div>;
   }
 
   if (error) {
@@ -48,20 +47,20 @@ export default function EditReviewPage({ params }) {
       <div className="text-center p-4">
         <div className="text-red-600 dark:text-red-400 mb-2">{error}</div>
         <div className="text-sm text-gray-600 dark:text-gray-400">
-          Redirecting to reviews page...
+          Redirecting to books page...
         </div>
       </div>
     );
   }
 
-  if (!review) return null;
+  if (!book) return null;
 
   return (
     <div className="max-w-4xl mx-auto px-4">
       <h1 className="text-2xl font-semibold mb-6 dark:text-gray-100">
-        Edit Review: {review.title}
+        Edit Book: {book.title}
       </h1>
-      <ReviewForm selectedBook={review} isEditing={true} existingReview={review} />
+      <BookForm selectedBook={book} isEditing={true} existingBook={book} />
     </div>
   );
 }
