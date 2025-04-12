@@ -26,6 +26,7 @@ export default function BooksPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const booksPerPage = 10; // Adjust this value as needed
   const [isScrollable, setIsScrollable] = useState(false);
+  const [expandedDescriptions, setExpandedDescriptions] = useState({});
   const router = useRouter();
 
   useEffect(() => {
@@ -98,6 +99,13 @@ export default function BooksPage() {
 
   const toggleBookExpand = (bookId) => {
     setExpandedBooks(prev => ({
+      ...prev,
+      [bookId]: !prev[bookId]
+    }));
+  };
+
+  const toggleDescription = (bookId) => {
+    setExpandedDescriptions(prev => ({
       ...prev,
       [bookId]: !prev[bookId]
     }));
@@ -236,6 +244,23 @@ export default function BooksPage() {
                           </Button>
                         </div>
                       </div>
+                    </div>
+
+                    {/* Add description section */}
+                    <div className="mt-4 text-sm text-gray-600 dark:text-gray-300">
+                      <p className={`${expandedDescriptions[book.id] ? '' : 'line-clamp-2'}`}>
+                        {book.description || 'No description available'}
+                      </p>
+                      {book.description && book.description !== 'No description available' && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="mt-1 h-auto p-0 text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300"
+                          onClick={() => toggleDescription(book.id)}
+                        >
+                          {expandedDescriptions[book.id] ? 'Show Less' : 'Show More'}
+                        </Button>
+                      )}
                     </div>
 
                     {/* Only show ratings for finished books */}
