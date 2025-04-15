@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, addDoc, query, where, getDocs, doc, deleteDoc, updateDoc } from "firebase/firestore";
+import { getFirestore, collection, addDoc, query, where, getDocs, doc, deleteDoc, updateDoc, setDoc, getDoc } from "firebase/firestore";
 import { 
   getAuth, 
   createUserWithEmailAndPassword, 
@@ -12,6 +12,7 @@ import {
   EmailAuthProvider,
   reauthenticateWithCredential
 } from "firebase/auth";
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -25,6 +26,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
+const storage = getStorage(app);
 
 export const BOOK_STATUSES = {
   WANT_TO_READ: 'want-to-read',
@@ -35,7 +37,18 @@ export const BOOK_STATUSES = {
 export async function registerUser(email, password) {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    return userCredential.user;
+    const user = userCredential.user;
+
+    // Create initial profile
+    await createUserProfile(user.uid, {
+      displayName: '',
+      bio: '',
+      photoURL: null,
+      favoriteBook: null,
+      readingPreferences: []
+    });
+
+    return user;
   } catch (error) {
     console.error("Error registering user:", error);
     throw error;
@@ -254,6 +267,22 @@ export const deleteUserAccount = async () => {
     
     // Delete each book document
     const deletePromises = querySnapshot.docs.map(doc => deleteDoc(doc.ref));
+    
+    // Delete profile picture from storage if it exists
+    const storageRef = ref(storage, `profilePictures/${user.uid}`);
+    try {
+      await deleteObject(storageRef);
+    } catch (error) {
+      // Ignore if profile picture doesn't exist
+      if (error.code !== 'storage/object-not-found') {
+        throw error;
+      }
+    }
+    
+    // Delete user profile document
+    await deleteDoc(doc(db, 'users', user.uid));
+    
+    // Wait for all deletions to complete
     await Promise.all(deletePromises);
     
     // Finally delete the user account
@@ -273,6 +302,79 @@ export async function reauthenticateUser(password) {
     return true;
   } catch (error) {
     console.error("Reauthentication error:", error);
+    throw error;
+  }
+}
+
+export async function createUserProfile(userId, profileData) {
+  try {
+    const userRef = doc(db, "users", userId);
+    await setDoc(userRef, {
+      ...profileData,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error("Error creating user profile:", error);
+    throw error;
+  }
+}
+
+export async function updateUserProfile(userId, profileData) {
+  try {
+    const userRef = doc(db, "users", userId);
+    await updateDoc(userRef, {
+      ...profileData,
+      updatedAt: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error("Error updating user profile:", error);
+    throw error;
+  }
+}
+
+export async function fetchUserProfile(userId) {
+  try {
+    const userRef = doc(db, "users", userId);
+    const userSnap = await getDoc(userRef);
+    
+    if (userSnap.exists()) {
+      return userSnap.data();
+    }
+    return null;
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+    throw error;
+  }
+}
+
+export async function uploadProfilePicture(userId, file) {
+  try {
+    // Size limit in bytes (500KB)
+    const MAX_FILE_SIZE = 500 * 1024;
+    
+    if (file.size > MAX_FILE_SIZE) {
+      throw new Error('Image too large. Please choose a smaller image (max 500KB)');
+    }
+
+    // Convert file to base64
+    const base64String = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (error) => reject(error);
+      reader.readAsDataURL(file);
+    });
+
+    // Update user profile with base64 image
+    const userRef = doc(db, "users", userId);
+    await updateDoc(userRef, {
+      photoURL: base64String,
+      updatedAt: new Date().toISOString()
+    });
+
+    return base64String;
+  } catch (error) {
+    console.error("Error uploading profile picture:", error);
     throw error;
   }
 }
