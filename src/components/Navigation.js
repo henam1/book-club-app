@@ -51,6 +51,14 @@ export default function Navigation() {
                 >
                   My Books
                 </Link>
+                <Link 
+                  href="/social"
+                  className={`inline-flex items-center px-1 pt-1 border-b-2 ${
+                    pathname.startsWith("/social") ? "border-blue-500" : "border-transparent"
+                  }`}
+                >
+                  Social
+                </Link>
               </div>
             )}
           </div>
